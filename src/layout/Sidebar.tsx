@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../session/AuthProvider";
 import { Link } from "react-router-dom";
-import AuthForm from "../component/AuthForm";
+import AuthForm from "../components/shared/AuthForm";
+import ActiveFlraDrawer from "../modules/forms/flra/ActiveFlraDrawer";
 import {
   handleSignIn,
   handleSignUp,
@@ -17,6 +18,7 @@ const Sidebar = () => {
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDrawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     const initSession = async () => {
@@ -66,7 +68,9 @@ const Sidebar = () => {
                 <Link to="/flra/new">Create New FLRA</Link>
               </li>
               <li>
-                <Link to="/flra/active">Active FLRA</Link>
+                <button type="button" onClick={() => setDrawerOpen(true)}>
+                  Active FLRA
+                </button>
               </li>
               <li>
                 <Link to="/flra/archive">Archive</Link>
@@ -101,6 +105,7 @@ const Sidebar = () => {
           )}
         </ul>
       </nav>
+      <ActiveFlraDrawer isOpen={isDrawerOpen} onClose={() => setDrawerOpen(false)} />
     </aside>
   );
 };

@@ -4,7 +4,7 @@ import {
   initialFormData,
   validateForm,
   ValidationErrors,
-} from "../util/authUtils";
+} from "../../util/authUtils";
 
 interface AuthFormProps {
   mode: "signin" | "signup";
@@ -158,4 +158,4 @@ const AuthForm = ({
   );
 };
 
-export default AuthForm;
+export default AuthForm; 
