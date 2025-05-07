@@ -1,5 +1,5 @@
 import React from "react";
-import { PreJobTaskChecklist } from "../../../types/formTypes";
+import { PreJobTaskChecklist } from "../../types/formTypes";
 
 type Props = {
   value: PreJobTaskChecklist;

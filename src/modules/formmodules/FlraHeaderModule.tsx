@@ -1,5 +1,5 @@
 import React from "react";
-import { FlraHeader } from "../../../types/formTypes";
+import { FlraHeader } from "../../types/formTypes";
 
 type Props = {
   value: FlraHeader;

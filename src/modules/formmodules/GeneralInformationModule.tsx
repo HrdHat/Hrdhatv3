@@ -1,5 +1,5 @@
 import React from "react";
-import { GeneralInformation } from "../../../types/formTypes";
+import { GeneralInformation } from "../../types/formTypes";
 
 type Props = {
   value: GeneralInformation;

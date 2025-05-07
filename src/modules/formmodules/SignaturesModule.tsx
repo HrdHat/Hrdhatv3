@@ -1,5 +1,5 @@
 import React from "react";
-import { Signature } from "../../../types/formTypes";
+import { Signature } from "../../types/formTypes";
 
 type Props = {
   value: Signature[];

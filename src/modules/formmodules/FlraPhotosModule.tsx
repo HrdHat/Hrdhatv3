@@ -1,5 +1,5 @@
 import React from "react";
-import { FlraPhoto } from "../../../types/formTypes";
+import { FlraPhoto } from "../../types/formTypes";
 
 type Props = {
   value: FlraPhoto[];

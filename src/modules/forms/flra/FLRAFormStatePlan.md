@@ -1,25 +1,28 @@
 # FLRA Form State Management & Submission Plan
 
-## Current State
-- No localStorage or DB save logic in FLRA modules.
-- All modules use local React state only (`useState`).
-- Data is lost on reload/navigation.
-- `ActiveFlraDrawer` has TODOs for saving active form, but no implementation.
+## New State (2024)
+- All form state is managed in React state in `FlraFormBuilder`.
+- Only one form is "open" at a time (tracked by `currentFormId`).
+- **All field changes are saved directly to Supabase immediately.**
+- No localStorage, no drafts, no debounce, no autosave.
+- When starting a new form, a new row is created in the `forms` table and a fresh `formId` is used for all subsequent saves.
+- Data is always persisted in Supabase; nothing is lost on reload/navigation.
+- `ActiveFlraDrawer` will fetch and manage active forms from Supabase.
 
 ---
 
 ## Status Field Usage
-- The `forms` table now includes a `status` field (`text NOT NULL DEFAULT 'draft'`).
+- The `forms` table includes a `status` field (`text NOT NULL DEFAULT 'draft'`).
 - This field tracks the lifecycle of a form: `'draft'`, `'submitted'`, or `'archived'`.
 
 ### Workflow Example
-- **On draft save:** Set `status = 'draft'` (default).
+- **On field change:** Data is upserted to Supabase with `status = 'draft'` (default).
 - **On submission:** Set `status = 'submitted'`.
 - **On archive:** Set `status = 'archived'`.
 
 ### Validation Note
 - Only required fields (per schema) must be validated on submission.
-- Drafts can be saved with incomplete/partial data.
+- Drafts (in-progress forms) can be saved with incomplete/partial data.
 
 ### Migration Note
 - The migration to add the `status` field to the `forms` table has been applied and is now part of the schema.
@@ -143,21 +146,22 @@
 - Pass state and setters to each module as props.
 - Enables saving/loading, validation, and submission.
 
-### 2. LocalStorage Autosave
-- Persist form state to localStorage on every change (debounced).
-- Prevents data loss on reload/navigation.
+### 2. Direct Supabase Save
+- On every field change, immediately upsert the relevant data to Supabase under the current `formId`.
+- No debounce, no localStorage, no drafts.
 
-### 3. Load from LocalStorage
-- On mount, check for a saved draft in localStorage and load it if present.
-- Allows users to resume incomplete forms.
+### 3. Start New Form
+- Clear all UI state.
+- Insert a new row in the `forms` table in Supabase.
+- Set the new `formId` in state.
+- All subsequent saves use this new `formId`.
 
 ### 4. Submission Logic
-- On submit, validate and send form data to Supabase (via a service in `src/services/`).
-- Clears the local draft after successful submission.
+- On submit, validate the state, update the form's `status` to `'submitted'` in Supabase.
 
-### 5. Draft/Active Form Management
-- Support multiple drafts, switching, and deletion (as suggested by `ActiveFlraDrawer`).
-- Users may have more than one FLRA in progress.
+### 5. Active Form Management
+- `ActiveFlraDrawer` fetches the list of forms from Supabase.
+- Switching, deleting, and listing forms is managed via Supabase queries/mutations.
 
 ---
 
@@ -167,22 +171,22 @@
 - Define a single state object for the entire FLRA form.
 - Pass relevant slices and setters to each module.
 
-### B. LocalStorage Integration
-- On every state change, serialize and save the form to localStorage (e.g., under a key like `flra_draft_{id}`).
-- On mount, check for a draft and load it.
+### B. Supabase Integration
+- On every field change, upsert the changed data to Supabase (no debounce).
+- On mount, fetch the current form data from Supabase if a `formId` is present.
 
 ### C. Submission
 - Add a submit button in `FlraFormBuilder`.
-- On submit, validate the state, call a service to save to Supabase, and clear the local draft.
+- On submit, validate the state, update the form's `status` to `'submitted'` in Supabase.
 
-### D. Draft Management
-- Store a list of draft IDs in localStorage.
-- Update `ActiveFlraDrawer` to list, switch, and delete drafts.
+### D. Active Form Management
+- `ActiveFlraDrawer` fetches, switches, and deletes forms using Supabase as the source of truth.
 
 ---
 
 ## Next Steps
-1. Refactor `FlraFormBuilder` to use a single state object for the whole form.
-2. Implement localStorage autosave/load for the form.
-3. Add a submit button and wire up submission logic.
-4. Expand `ActiveFlraDrawer` to manage multiple drafts. 
+1. Refactor `FlraFormBuilder` to remove all localStorage and debounce logic.
+2. Implement direct Supabase upsert on every field change.
+3. Add logic to create a new form row in Supabase when starting a new form.
+4. Update `ActiveFlraDrawer` to fetch and manage forms from Supabase.
+5. Add a submit button and wire up submission logic to update status in Supabase. 

@@ -1,5 +1,5 @@
 import React from "react";
-import { TaskHazardControl } from "../../../types/formTypes";
+import { TaskHazardControl } from "../../types/formTypes";
 
 type Props = {
   value: TaskHazardControl[];

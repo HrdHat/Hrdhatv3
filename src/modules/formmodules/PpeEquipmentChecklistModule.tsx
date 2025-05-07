@@ -1,5 +1,5 @@
 import React from "react";
-import { PpeEquipmentChecklist } from "../../../types/formTypes";
+import { PpeEquipmentChecklist } from "../../types/formTypes";
 
 type Props = {
   value: PpeEquipmentChecklist;

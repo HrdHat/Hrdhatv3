@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import FlraHeaderModule from "./FlraHeaderModule";
-import GeneralInformationModule from "./GeneralInformationModule";
-import PreJobTaskChecklistModule from "./PreJobTaskChecklistModule";
-import PpeEquipmentChecklistModule from "./PpeEquipmentChecklistModule";
-import TaskHazardControlModule from "./TaskHazardControlModule";
-import FlraPhotosModule from "./FlraPhotosModule";
-import SignaturesModule from "./SignaturesModule";
+import FlraHeaderModule from "../../formmodules/FlraHeaderModule";
+import GeneralInformationModule from "../../formmodules/GeneralInformationModule";
+import PreJobTaskChecklistModule from "../../formmodules/PreJobTaskChecklistModule";
+import PpeEquipmentChecklistModule from "../../formmodules/PpeEquipmentChecklistModule";
+import TaskHazardControlModule from "../../formmodules/TaskHazardControlModule";
+import FlraPhotosModule from "../../formmodules/FlraPhotosModule";
+import SignaturesModule from "../../formmodules/SignaturesModule";
 import { FlraFormState } from "../../../types/formTypes";
 
 const LOCAL_STORAGE_KEY = "flra_draft";
