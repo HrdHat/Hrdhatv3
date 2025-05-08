@@ -51,8 +51,26 @@ export type TaskHazardControl = {
 };
 
 export type FlraPhoto = {
-  photo_url: string;
+  // Required fields from Supabase schema
+  id: string;
+  form_id: string;
+  form_module_id: string;
+  storage_path: string;
+  public_url: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  uploaded_by: string;
+  uploaded_at: string;
+  updated_at: string;
+  is_deleted: boolean;
+
+  // Optional fields from Supabase schema
   description?: string | null;
+  sort_order?: number | null;
+  tag?: string | null;
+  source?: "mobile" | "web" | "imported";
+  deleted_at?: string | null;
 };
 
 export type Signature = {
@@ -89,5 +107,11 @@ export type FlraFormState = {
   taskHazards: TaskHazardControl[];
   photos: FlraPhoto[];
   signatures: Signature[];
-  status?: 'draft' | 'submitted' | 'archived';
-}; 
+  status?: "draft" | "submitted" | "archived";
+
+  // TEMPORARY: Bridge solution until full form saving is implemented
+  // These IDs ensure photos stay organized during form creation
+  // They will be replaced by proper database IDs when saving is implemented
+  formId?: string; // Stable ID for the current form session
+  photosModuleId?: string; // Stable ID for the photos module instance
+};
