@@ -12,6 +12,7 @@ import {
   AuthFormData,
 } from "../util/authUtils";
 import ConfirmDialog from "../components/shared/ConfirmDialog";
+import CreateFlraButton from '../components/shared/CreateFlraButton';
 
 const Sidebar = () => {
   const { user, signOut } = useAuth();
@@ -92,9 +93,9 @@ const Sidebar = () => {
           ) : user ? (
             <>
               <li>
-                <button style={buttonLinkStyle} onClick={handleCreateNewFlra}>
+                <CreateFlraButton onClick={handleCreateNewFlra}>
                   Create New FLRA
-                </button>
+                </CreateFlraButton>
               </li>
               <li>
                 <button style={buttonLinkStyle} type="button" onClick={() => setDrawerOpen(true)}>
