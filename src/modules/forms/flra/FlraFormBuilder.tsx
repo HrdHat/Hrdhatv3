@@ -32,6 +32,7 @@ import SignaturesModule from "../../formmodules/SignaturesModule";
 import { FlraFormState } from "../../../types/formTypes";
 import { useAuth } from "../../../session/AuthProvider";
 import { ensureFormRowExists } from "../../../services/forms/createOrUpdateForm";
+import { moduleMap } from "./moduleMap";
 
 // TEMPORARY: Bridge solution until full form saving is implemented
 // This function generates a stable form ID that will be used to organize photos
@@ -59,6 +60,18 @@ const initialState: FlraFormState = {
     .substr(2, 9)}`,
 };
 
+type ModuleKey = keyof typeof moduleMap;
+
+const moduleOrder: ModuleKey[] = [
+  "header",
+  "general",
+  "preJobChecklist",
+  "ppeChecklist",
+  "taskHazards",
+  "photos",
+  "signatures",
+];
+
 const FlraFormBuilder: React.FC = () => {
   const [formState, setFormState] = useState<FlraFormState>(initialState);
   const { user } = useAuth();
@@ -84,42 +97,52 @@ const FlraFormBuilder: React.FC = () => {
   return (
     <div>
       <h1>Create New FLRA</h1>
-      {/* Pass state and setters as needed to each module */}
-      <FlraHeaderModule
-        value={formState.header}
-        onChange={(header) => setFormState((s) => ({ ...s, header }))}
-      />
-      <GeneralInformationModule
-        value={formState.general}
-        onChange={(general) => setFormState((s) => ({ ...s, general }))}
-      />
-      <PreJobTaskChecklistModule
-        value={formState.preJobChecklist}
-        onChange={(preJobChecklist) =>
-          setFormState((s) => ({ ...s, preJobChecklist }))
+      {moduleOrder.map((key) => {
+        const ModuleComponent = moduleMap[key];
+        if (!ModuleComponent) return null;
+        const props: any = {};
+        switch (key) {
+          case "header":
+            props.value = formState.header;
+            props.onChange = (header: any) => setFormState((s) => ({ ...s, header }));
+            break;
+          case "general":
+            props.value = formState.general;
+            props.onChange = (general: any) => setFormState((s) => ({ ...s, general }));
+            break;
+          case "preJobChecklist":
+            props.value = formState.preJobChecklist;
+            props.onChange = (preJobChecklist: any) => setFormState((s) => ({ ...s, preJobChecklist }));
+            break;
+          case "ppeChecklist":
+            props.value = formState.ppeChecklist;
+            props.onChange = (ppeChecklist: any) => setFormState((s) => ({ ...s, ppeChecklist }));
+            break;
+          case "taskHazards":
+            props.value = formState.taskHazards;
+            props.onChange = (taskHazards: any) => setFormState((s) => ({ ...s, taskHazards }));
+            break;
+          case "photos":
+            props.value = formState.photos;
+            props.onChange = (photos: any) => setFormState((s) => ({ ...s, photos }));
+            props.formId = formId;
+            props.formModuleId = photosModuleId;
+            props.uploadedBy = user?.id || "";
+            break;
+          case "signatures":
+            props.value = formState.signatures;
+            props.onChange = (signatures: any) => setFormState((s) => ({ ...s, signatures }));
+            props.formId = formId;
+            break;
+          default:
+            // Only access keys that exist on formState
+            if (key in formState) {
+              props.value = (formState as any)[key];
+              props.onChange = (val: any) => setFormState((s) => ({ ...s, [key]: val }));
+            }
         }
-      />
-      <PpeEquipmentChecklistModule
-        value={formState.ppeChecklist}
-        onChange={(ppeChecklist) =>
-          setFormState((s) => ({ ...s, ppeChecklist }))
-        }
-      />
-      <TaskHazardControlModule
-        value={formState.taskHazards}
-        onChange={(taskHazards) => setFormState((s) => ({ ...s, taskHazards }))}
-      />
-      <FlraPhotosModule
-        value={formState.photos}
-        onChange={(photos) => setFormState((s) => ({ ...s, photos }))}
-        formId={formId}
-        formModuleId={photosModuleId}
-        uploadedBy={user?.id || ""}
-      />
-      <SignaturesModule
-        value={formState.signatures}
-        onChange={(signatures) => setFormState((s) => ({ ...s, signatures }))}
-      />
+        return <ModuleComponent key={key} {...props} />;
+      })}
     </div>
   );
 };

@@ -1,47 +1,76 @@
-import React from "react";
-import { Signature } from "../../types/formTypes";
+import React, { useState } from "react";
+import SignatureCanvas from "../../components/shared/SignatureCanvas";
+import { uploadSignatureToSupabase, SignatureMetadata } from "../../services/forms/uploadSignatureToSupabase";
+import { useAuth } from "../../session/AuthProvider";
 
 type Props = {
-  value: Signature[];
-  onChange: (signatures: Signature[]) => void;
+  value: SignatureMetadata[];
+  onChange: (signatures: SignatureMetadata[]) => void;
+  formId: string;
 };
 
-const SignaturesModule: React.FC<Props> = ({ value, onChange }) => {
-  // console.log("SignaturesModule value:", value);
-  const handleChange = (idx: number, field: keyof Signature, val: string) => {
-    onChange(value.map((sig, i) => i === idx ? { ...sig, [field]: val } : sig));
-  };
+const SignaturesModule: React.FC<Props> = ({ value, onChange, formId }) => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const addSignature = () => {
-    onChange([...value, { worker_name: "", signature_url: "", signed_at: "" }]);
-  };
+  // Check if current user has already signed
+  const alreadySigned = !!value.find(sig => sig.signed_by === user?.id);
 
-  const removeSignature = (idx: number) => {
-    onChange(value.filter((_, i) => i !== idx));
+  const handleSigned = async ({ name, blob }: { name: string; blob: Blob }) => {
+    if (!user?.id) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const meta = await uploadSignatureToSupabase({
+        formId,
+        userId: user.id,
+        name,
+        blob,
+      });
+      // Replace or add the user's signature in the list
+      const updated = value.filter(sig => sig.signed_by !== user.id).concat(meta);
+      onChange(updated);
+    } catch (e: any) {
+      setError(e.message || "Failed to save signature.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <section>
       <h2>Signatures</h2>
+      {!alreadySigned && (
+        <SignatureCanvas
+          formId={formId}
+          userId={user?.id || ""}
+          userName={user?.user_metadata?.full_name || ""}
+          onSigned={handleSigned}
+        />
+      )}
+      {loading && <p>Saving signature...</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
       <div>
-        {value.map((sig, idx) => (
-          <div key={idx}>
-            <label>
-              Worker Name:
-              <input type="text" value={sig.worker_name} onChange={e => handleChange(idx, "worker_name", e.target.value)} />
-            </label>
-            <label>
-              Signature URL:
-              <input type="text" value={sig.signature_url} onChange={e => handleChange(idx, "signature_url", e.target.value)} />
-            </label>
-            <label>
-              Signed At:
-              <input type="datetime-local" value={sig.signed_at} onChange={e => handleChange(idx, "signed_at", e.target.value)} />
-            </label>
-            <button type="button" onClick={() => removeSignature(idx)} disabled={value.length === 1}>Remove</button>
-          </div>
-        ))}
-        <button type="button" onClick={addSignature}>Add Signature</button>
+        {value.length === 0 && <p>No signatures yet.</p>}
+        {value
+          .slice() // avoid mutating the original array
+          .sort((a, b) => new Date(b.signed_at).getTime() - new Date(a.signed_at).getTime())
+          .map((sig) => (
+            <div key={sig.signed_by} style={{ marginBottom: 16 }}>
+              <div>
+                <strong>{sig.name}</strong>
+                <span style={{ marginLeft: 8, color: "#888" }}>
+                  {new Date(sig.signed_at).toLocaleString()}
+                </span>
+              </div>
+              <img
+                src={sig.public_url}
+                alt={`Signature of ${sig.name}`}
+                style={{ border: "1px solid #ccc", background: "#fff", maxWidth: 300, maxHeight: 80 }}
+              />
+            </div>
+          ))}
       </div>
     </section>
   );
