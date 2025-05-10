@@ -1,9 +1,30 @@
--- 1. TABLES (dependency order)
+-- schema.sql
+-- Core table definitions for HrdHat application
 
--- profiles (no dependencies)
+-- 1. Extensions
+create extension if not exists "uuid-ossp";
+
+-- 2. Core Tables (no dependencies)
+
+-- Companies
+create table if not exists public.companies (
+  id uuid primary key default uuid_generate_v4(),
+  name text not null unique,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Projects
+create table if not exists public.projects (
+  id uuid primary key default uuid_generate_v4(),
+  company_id uuid references public.companies(id),
+  name text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Profiles
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id),
-  email text unique not null,
+  email text not null unique,
   full_name text not null,
   phone_number text,
   company text,
@@ -16,7 +37,7 @@ create table if not exists public.profiles (
   default_form_name text
 );
 
--- form_list (no dependencies)
+-- Form List (Templates)
 create table if not exists public.form_list (
   id uuid primary key default uuid_generate_v4(),
   name text not null unique,
@@ -27,7 +48,7 @@ create table if not exists public.form_list (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- module_list (no dependencies)
+-- Module List
 create table if not exists public.module_list (
   id uuid primary key default uuid_generate_v4(),
   name text not null unique,
@@ -39,15 +60,38 @@ create table if not exists public.module_list (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- forms (depends on profiles)
+-- 3. Form-related Tables
+
+-- Forms
 create table if not exists public.forms (
   id uuid primary key default uuid_generate_v4(),
-  form_number text unique not null,
+  form_number text unique,
   created_by uuid references public.profiles(id),
-  status text not null default 'draft'
+  user_id uuid references public.profiles(id),
+  status text default 'draft',
+  last_modified timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  auto_archived boolean,
+  data jsonb,
+  company_id uuid references public.companies(id),
+  project_id uuid references public.projects(id),
+  title text,
+  description text,
+  version integer not null default 1,
+  submitted_at timestamp with time zone
 );
 
--- form_template_modules (depends on form_list, module_list)
+-- Form Modules
+create table if not exists public.form_modules (
+  id uuid primary key default uuid_generate_v4(),
+  form_id uuid not null references public.forms(id),
+  module_id uuid not null references public.module_list(id),
+  module_order integer not null,
+  is_required boolean default true not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Form Template Modules
 create table if not exists public.form_template_modules (
   id uuid primary key default uuid_generate_v4(),
   form_list_id uuid not null references public.form_list(id),
@@ -56,17 +100,7 @@ create table if not exists public.form_template_modules (
   is_required boolean default true not null
 );
 
--- form_modules (depends on forms, module_list)
-create table if not exists public.form_modules (
-  id uuid primary key default uuid_generate_v4(),
-  form_id uuid not null references public.forms(id),
-  module_list_id uuid not null references public.module_list(id),
-  module_order integer not null,
-  is_required boolean default true not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- user_form_module_preferences (depends on profiles, form_list, module_list)
+-- User Form Module Preferences
 create table if not exists public.user_form_module_preferences (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references public.profiles(id),
@@ -77,7 +111,19 @@ create table if not exists public.user_form_module_preferences (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- flra_header (depends on form_modules)
+-- 4. Form Data Tables
+
+-- Form Data (Generic)
+create table if not exists public.form_data (
+  id uuid primary key default uuid_generate_v4(),
+  form_id uuid not null references public.forms(id),
+  module_id uuid not null references public.form_modules(id),
+  data jsonb not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- FLRA Header
 create table if not exists public.flra_header (
   id uuid primary key default uuid_generate_v4(),
   form_module_id uuid references public.form_modules(id),
@@ -87,7 +133,7 @@ create table if not exists public.flra_header (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- general_information (depends on form_modules)
+-- General Information
 create table if not exists public.general_information (
   id uuid primary key default uuid_generate_v4(),
   form_module_id uuid references public.form_modules(id),
@@ -99,12 +145,12 @@ create table if not exists public.general_information (
   date date,
   crew_members_count integer,
   task_description text,
-  start_time time,
-  end_time time,
+  start_time time without time zone,
+  end_time time without time zone,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- pre_job_task_checklist (depends on forms, form_modules)
+-- Pre-job Task Checklist
 create table if not exists public.pre_job_task_checklist (
   id uuid primary key default uuid_generate_v4(),
   form_id uuid not null references public.forms(id),
@@ -132,7 +178,7 @@ create table if not exists public.pre_job_task_checklist (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- task_hazard_control (depends on forms, form_modules)
+-- Task Hazard Control
 create table if not exists public.task_hazard_control (
   id uuid primary key default uuid_generate_v4(),
   form_id uuid not null references public.forms(id),
@@ -145,27 +191,7 @@ create table if not exists public.task_hazard_control (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- flra_photos (depends on forms, form_modules)
-create table if not exists public.flra_photos (
-  id uuid primary key default uuid_generate_v4(),
-  form_id uuid not null references public.forms(id),
-  form_module_id uuid references public.form_modules(id),
-  photo_url text not null,
-  description text,
-  uploaded_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- signatures (depends on forms, form_modules)
-create table if not exists public.signatures (
-  id uuid primary key default uuid_generate_v4(),
-  form_id uuid not null references public.forms(id),
-  form_module_id uuid references public.form_modules(id),
-  worker_name text not null,
-  signature_url text not null,
-  signed_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- ppe_platform_inspection (depends on forms, form_modules)
+-- PPE Platform Inspection
 create table if not exists public.ppe_platform_inspection (
   id uuid primary key default uuid_generate_v4(),
   form_id uuid not null references public.forms(id),
@@ -190,213 +216,44 @@ create table if not exists public.ppe_platform_inspection (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 2. TRIGGERS, FUNCTIONS, INSERTS
+-- 5. Photo and Signature Tables
 
--- Automatically create a profile when a new user signs up
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, email, full_name, created_at, updated_at, is_active)
-  values (new.id, new.email, coalesce(new.raw_user_meta_data->>'full_name', ''), now(), now(), true)
-  on conflict (id) do nothing;
-  return new;
-end;
-$$ language plpgsql security definer;
+-- Form Data Photos
+create table if not exists public.form_data_photos (
+  id uuid primary key default uuid_generate_v4(),
+  form_id uuid not null references public.forms(id),
+  form_module_id uuid not null references public.form_modules(id),
+  uploaded_by uuid not null references public.profiles(id),
+  storage_path text not null,
+  public_url text not null,
+  file_name text not null,
+  file_size integer not null,
+  mime_type text not null,
+  description text,
+  sort_order integer,
+  tag text,
+  source text,
+  uploaded_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  is_deleted boolean default false,
+  deleted_at timestamp with time zone,
+  constraint unique_storage_path unique (storage_path),
+  constraint positive_file_size check (file_size > 0),
+  constraint valid_soft_delete check (
+    (is_deleted = false and deleted_at is null) or
+    (is_deleted = true and deleted_at is not null)
+  ),
+  constraint valid_mime_type check (
+    mime_type in ('image/jpeg', 'image/png', 'image/heic', 'image/heif')
+  )
+);
 
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
-
-drop trigger if exists update_profiles_updated_at on public.profiles;
-create or replace function update_updated_at_column()
-returns trigger as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$ language 'plpgsql';
-
-create trigger update_profiles_updated_at
-before update on public.profiles
-for each row
-execute procedure update_updated_at_column();
-
-drop trigger if exists update_form_list_updated_at on public.form_list;
-create or replace function update_form_list_updated_at_column()
-returns trigger as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$ language 'plpgsql';
-
-create trigger update_form_list_updated_at
-before update on public.form_list
-for each row
-execute procedure update_form_list_updated_at_column();
-
-drop trigger if exists update_module_list_updated_at on public.module_list;
-create or replace function update_module_list_updated_at_column()
-returns trigger as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$ language 'plpgsql';
-
-create trigger update_module_list_updated_at
-before update on public.module_list
-for each row
-execute procedure update_module_list_updated_at_column();
-
--- Insert default modules for FLRA forms
-insert into public.module_list (id, name, description, is_active, is_enabled, is_default, created_at, updated_at)
-values
-  (uuid_generate_v4(), 'FLRA Header', 'Header section for FLRA forms', true, true, true, now(), now()),
-  (uuid_generate_v4(), 'General Information', 'General info section for FLRA forms', true, true, true, now(), now()),
-  (uuid_generate_v4(), 'Pre Job/Task Checklist', 'Checklist before starting the job/task', true, true, true, now(), now()),
-  (uuid_generate_v4(), 'PPE & Equipment Checklist', 'Checklist for PPE and equipment', true, true, true, now(), now()),
-  (uuid_generate_v4(), 'Task Hazard Control Module', 'Module for identifying and controlling hazards', true, true, true, now(), now()),
-  (uuid_generate_v4(), 'FLRA Photos', 'Section for uploading photos', true, true, true, now(), now()),
-  (uuid_generate_v4(), 'Signatures', 'Section for signatures', true, true, true, now(), now())
-  on conflict (name) do nothing;
-
--- 3. RLS, POLICIES, INDEXES
-
--- Remove password_hash if present
-alter table public.profiles drop column if exists password_hash;
-
--- Add created_by to forms if not exists
-alter table public.forms add column if not exists created_by uuid references public.profiles(id);
-
--- Enable RLS
-alter table public.profiles enable row level security;
-alter table public.forms enable row level security;
-alter table public.form_modules enable row level security;
-alter table public.user_form_module_preferences enable row level security;
-
--- Profiles policies (UPDATED)
--- First, drop all existing profile policies to ensure clean state
-drop policy if exists "Users can view their own profile" on public.profiles;
-drop policy if exists "Users can update their own profile" on public.profiles;
-drop policy if exists "Allow inserts for self or trigger" on public.profiles;
-drop policy if exists "Users can insert their own profile" on public.profiles;
-drop policy if exists "Allow service role inserts" on public.profiles;
-
--- Then create the three essential policies
-create policy "Allow inserts for self or trigger"
-  on public.profiles for insert
-  with check (auth.uid() = id OR auth.uid() IS NULL);
-
-create policy "Users can view their own profile"
-  on public.profiles for select
-  using (auth.uid() = id);
-
-create policy "Users can update their own profile"
-  on public.profiles for update
-  using (auth.uid() = id);
-
--- Forms policies
-drop policy if exists "Users can view their own forms" on public.forms;
-create policy "Users can view their own forms"
-  on public.forms for select
-  using (auth.uid() = created_by);
-
-drop policy if exists "Users can insert forms" on public.forms;
-create policy "Users can insert forms"
-  on public.forms for insert
-  with check (auth.uid() = created_by);
-
-drop policy if exists "Users can update their own forms" on public.forms;
-create policy "Users can update their own forms"
-  on public.forms for update
-  using (auth.uid() = created_by);
-
-drop policy if exists "Users can delete their own forms" on public.forms;
-create policy "Users can delete their own forms"
-  on public.forms for delete
-  using (auth.uid() = created_by);
-
--- Form modules policies
-drop policy if exists "Users can access modules of their own forms" on public.form_modules;
-create policy "Users can access modules of their own forms"
-  on public.form_modules for select
-  using (
-    exists (
-      select 1 from public.forms
-      where public.forms.id = form_modules.form_id
-      and public.forms.created_by = auth.uid()
-    )
-  );
-
-drop policy if exists "Users can insert modules for their own forms" on public.form_modules;
-create policy "Users can insert modules for their own forms"
-  on public.form_modules for insert
-  with check (
-    exists (
-      select 1 from public.forms
-      where public.forms.id = form_modules.form_id
-      and public.forms.created_by = auth.uid()
-    )
-  );
-
-drop policy if exists "Users can update modules of their own forms" on public.form_modules;
-create policy "Users can update modules of their own forms"
-  on public.form_modules for update
-  using (
-    exists (
-      select 1 from public.forms
-      where public.forms.id = form_modules.form_id
-      and public.forms.created_by = auth.uid()
-    )
-  );
-
-drop policy if exists "Users can delete modules of their own forms" on public.form_modules;
-create policy "Users can delete modules of their own forms"
-  on public.form_modules for delete
-  using (
-    exists (
-      select 1 from public.forms
-      where public.forms.id = form_modules.form_id
-      and public.forms.created_by = auth.uid()
-    )
-  );
-
--- User form module preferences policies
-drop policy if exists "Users can access their own module preferences" on public.user_form_module_preferences;
-create policy "Users can access their own module preferences"
-  on public.user_form_module_preferences for select
-  using (auth.uid() = user_id);
-
-drop policy if exists "Users can insert their own module preferences" on public.user_form_module_preferences;
-create policy "Users can insert their own module preferences"
-  on public.user_form_module_preferences for insert
-  with check (auth.uid() = user_id);
-
-drop policy if exists "Users can update their own module preferences" on public.user_form_module_preferences;
-create policy "Users can update their own module preferences"
-  on public.user_form_module_preferences for update
-  using (auth.uid() = user_id);
-
-drop policy if exists "Users can delete their own module preferences" on public.user_form_module_preferences;
-create policy "Users can delete their own module preferences"
-  on public.user_form_module_preferences for delete
-  using (auth.uid() = user_id);
-
--- Add this policy to your profiles table:
-drop policy if exists "Allow service role inserts" on public.profiles;
-drop policy if exists "Allow inserts for self or trigger" on public.profiles;
-create policy "Allow inserts for self or trigger"
-  on public.profiles for insert
-  with check (auth.uid() = id OR auth.uid() IS NULL);
-
--- Indexes for performance
-create index if not exists idx_forms_created_by on public.forms(created_by);
-create index if not exists idx_form_modules_form_id on public.form_modules(form_id);
-create index if not exists idx_user_form_module_preferences_user_id on public.user_form_module_preferences(user_id);
-
--- (Optional) Storage bucket policy example (run in Supabase Storage SQL editor, not here)
--- create policy "Users can access their own logos"
---   on storage.objects for select
---   using (auth.uid()::text = split_part(name, '/', 1)); 
+-- Signatures
+create table if not exists public.signatures (
+  id uuid primary key default uuid_generate_v4(),
+  form_id uuid not null references public.forms(id),
+  form_module_id uuid references public.form_modules(id),
+  worker_name text not null,
+  signature_url text not null,
+  signed_at timestamp with time zone default timezone('utc'::text, now()) not null
+); 

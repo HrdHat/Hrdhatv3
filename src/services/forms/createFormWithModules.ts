@@ -1,8 +1,12 @@
-import { createForm, FlraForm, SupabaseError as FormError } from './createForm';
-import { createFormModule, FormModule, SupabaseError as ModuleError } from './createFormModule';
+import { createForm, FlraForm, SupabaseError as FormError } from "./createForm";
+import {
+  createFormModule,
+  FormModule,
+  SupabaseError as ModuleError,
+} from "./createFormModule";
 
 export interface CreateFormWithModulesInput {
-  companyId: string;
+  companyId?: string;
   projectId?: string;
   title: string;
   description?: string;
@@ -23,9 +27,18 @@ export async function createFormWithModules({
   moduleIds,
 }: CreateFormWithModulesInput): Promise<CreateFormWithModulesResult> {
   // 1. Create the form
-  const { form, error: formError } = await createForm({ companyId, projectId, title, description });
+  const { form, error: formError } = await createForm({
+    company_id: companyId,
+    project_id: projectId,
+    title,
+    description,
+  });
   if (formError || !form) {
-    return { form: null, modules: [], error: formError?.message || 'Failed to create form' };
+    return {
+      form: null,
+      modules: [],
+      error: formError?.message || "Failed to create form",
+    };
   }
 
   // 2. Create all modules in order
@@ -42,11 +55,13 @@ export async function createFormWithModules({
       return {
         form,
         modules,
-        error: `Failed to add module ${moduleId}: ${moduleError?.message || 'Unknown error'}`,
+        error: `Failed to add module ${moduleId}: ${
+          moduleError?.message || "Unknown error"
+        }`,
       };
     }
     modules.push(formModule);
   }
 
   return { form, modules, error: null };
-} 
+}

@@ -1,57 +1,98 @@
-import { useEffect, useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../db/supabaseClient";
-import { FlraFormState } from "../types/formTypes";
 
-export function useFlraFormData(formId: string | null) {
-  const [formState, setFormState] = useState<FlraFormState | null>(null);
-  const [loading, setLoading] = useState(false);
+interface FormField {
+  id: string;
+  form_module_id: string;
+  label: string;
+  type: string;
+  required: boolean;
+  value?: any;
+}
+
+interface FormModule {
+  id: string;
+  form_id: string;
+  label: string;
+  module_order: number;
+}
+
+interface FormData {
+  id: string;
+  title: string;
+  description: string;
+  modules: Array<FormModule & { fields: FormField[] }>;
+}
+
+export const useFlraFormData = (formId: string | null) => {
+  const [formData, setFormData] = useState<FormData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const isFirstLoad = useRef(true);
 
-  // Fetch form data when formId changes
   useEffect(() => {
-    if (!formId) {
-      setFormState(null);
-      setError(null);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    supabase
-      .from("forms")
-      .select("*")
-      .eq("id", formId)
-      .single()
-      .then(({ data, error }) => {
-        if (error) {
-          setFormState(null);
-          setError("Could not load form data.");
-        } else {
-          setFormState(data as FlraFormState);
-          setError(null);
-        }
+    const fetchFormData = async () => {
+      if (!formId) {
         setLoading(false);
-        isFirstLoad.current = false;
-      });
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch form details
+        const { data: form, error: formError } = await supabase
+          .from("forms")
+          .select("*")
+          .eq("id", formId)
+          .single();
+
+        if (formError) throw formError;
+
+        // Fetch modules
+        const { data: modules, error: modulesError } = await supabase
+          .from("form_modules")
+          .select("*")
+          .eq("form_id", formId)
+          .order("module_order");
+
+        if (modulesError) throw modulesError;
+
+        // Fetch fields for each module
+        const modulesWithFields = await Promise.all(
+          (modules as FormModule[]).map(async (module) => {
+            const { data: fields, error: fieldsError } = await supabase
+              .from("form_module_fields")
+              .select("*")
+              .eq("form_module_id", module.id)
+              .order("order");
+
+            if (fieldsError) throw fieldsError;
+
+            return {
+              ...module,
+              fields: fields || [],
+            };
+          })
+        );
+
+        setFormData({
+          ...form,
+          modules: modulesWithFields,
+        });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFormData();
   }, [formId]);
 
-  // Auto-save on formState change (but not on first load)
-  useEffect(() => {
-    if (!formId || !formState || isFirstLoad.current) return;
-    setSaveStatus("saving");
-    supabase
-      .from("forms")
-      .update(formState)
-      .eq("id", formId)
-      .then(({ error }) => {
-        if (error) {
-          setSaveStatus("error");
-        } else {
-          setSaveStatus("saved");
-        }
-      });
-  }, [formState, formId]);
-
-  return { formState, setFormState, loading, error, saveStatus };
-} 
+  return {
+    formData,
+    loading,
+    error,
+  };
+};

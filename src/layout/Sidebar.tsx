@@ -12,7 +12,8 @@ import {
   AuthFormData,
 } from "../util/authUtils";
 import ConfirmDialog from "../components/shared/ConfirmDialog";
-import CreateFlraButton from '../components/shared/CreateFlraButton';
+import CreateFlraButton from "../components/buttons/CreateFlraButton";
+import { useCreateFlraForm } from "../hooks/useCreateFlraForm";
 
 const Sidebar = () => {
   const { user, signOut } = useAuth();
@@ -23,6 +24,7 @@ const Sidebar = () => {
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
+  const { createNewFlra, loading: createLoading } = useCreateFlraForm();
 
   useEffect(() => {
     const initSession = async () => {
@@ -64,25 +66,18 @@ const Sidebar = () => {
     setShowConfirm(true);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     setShowConfirm(false);
-    navigate("/flra/new");
+    try {
+      await createNewFlra();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to create new FLRA");
+    }
   };
 
   const handleCancel = () => {
     setShowConfirm(false);
   };
-
-  // Style for button-as-link
-  const buttonLinkStyle = {
-    background: "none",
-    border: "none",
-    color: "blue",
-    textDecoration: "underline",
-    cursor: "pointer",
-    padding: 0,
-    font: "inherit"
-  } as React.CSSProperties;
 
   return (
     <aside>
@@ -93,12 +88,15 @@ const Sidebar = () => {
           ) : user ? (
             <>
               <li>
-                <CreateFlraButton onClick={handleCreateNewFlra}>
+                <CreateFlraButton
+                  onClick={handleCreateNewFlra}
+                  loading={createLoading}
+                >
                   Create New FLRA
                 </CreateFlraButton>
               </li>
               <li>
-                <button style={buttonLinkStyle} type="button" onClick={() => setDrawerOpen(true)}>
+                <button type="button" onClick={() => setDrawerOpen(true)}>
                   Active FLRA
                 </button>
               </li>
@@ -112,14 +110,12 @@ const Sidebar = () => {
                 <Link to="/settings">Account Settings</Link>
               </li>
               <li>
-                <button style={buttonLinkStyle} onClick={signOut}>Logout</button>
+                <button onClick={signOut}>Logout</button>
               </li>
             </>
           ) : (
             <>
-              <li className="welcome-message">
-                {hasPreviousSession ? "Welcome Back!" : "Welcome!"}
-              </li>
+              <li>{hasPreviousSession ? "Welcome Back!" : "Welcome!"}</li>
               <li>
                 <AuthForm
                   mode={authMode}
@@ -135,7 +131,10 @@ const Sidebar = () => {
           )}
         </ul>
       </nav>
-      <ActiveFlraDrawer isOpen={isDrawerOpen} onClose={() => setDrawerOpen(false)} />
+      <ActiveFlraDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      />
       <ConfirmDialog
         open={showConfirm}
         message="Are you sure you want to start a new FLRA? Unsaved changes will be lost."

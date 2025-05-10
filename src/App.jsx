@@ -8,7 +8,7 @@ import AppShellTablet from "./layout/AppShellTablet";
 import AppShellMobile from "./layout/AppShellMobile";
 import LoginHomePage from "./pages/LoginHomePage";
 import LandingPage from "./pages/LandingPage";
-import FlraFormBuilder from "./modules/forms/flra/FlraFormBuilder";
+import FlraFormPage from "./pages/FlraFormPage";
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -50,10 +50,10 @@ function AppContent() {
           }
         />
         <Route
-          path="/flra/new"
+          path="/flra/:formId"
           element={
             <ProtectedRoute>
-              <FlraFormBuilder />
+              <FlraFormPage />
             </ProtectedRoute>
           }
         />
