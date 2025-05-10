@@ -32,6 +32,7 @@ export async function createFormModule({
 }> {
   try {
     // 1. Verify module exists and is active
+    console.log(`[createFormModule] Checking if module ${moduleId} exists and is active...`);
     const { data: module, error: moduleError } = await supabase
       .from("module_list")
       .select("id")
@@ -40,6 +41,7 @@ export async function createFormModule({
       .single();
 
     if (moduleError || !module) {
+      console.error(`[createFormModule] Module not found or inactive: ${moduleId}`, moduleError);
       return {
         formModule: null,
         error: { message: "Module not found or inactive" },
@@ -47,6 +49,7 @@ export async function createFormModule({
     }
 
     // 2. Create form module
+    console.log(`[createFormModule] Creating form module for formId=${formId}, moduleId=${moduleId}, order=${moduleOrder}, isRequired=${isRequired}`);
     const { data, error } = await supabase
       .from("form_modules")
       .insert([
@@ -61,6 +64,7 @@ export async function createFormModule({
       .single();
 
     if (error) {
+      console.error(`[createFormModule] Error creating form module:`, error);
       return {
         formModule: null,
         error: { message: error.message, details: error.details },
@@ -68,14 +72,17 @@ export async function createFormModule({
     }
 
     if (!data || !data.id) {
+      console.error(`[createFormModule] Invalid form_module response from Supabase`, data);
       return {
         formModule: null,
         error: { message: "Invalid form_module response from Supabase" },
       };
     }
 
+    console.log(`[createFormModule] Successfully created form module:`, data);
     return { formModule: data as FormModule, error: null };
   } catch (err) {
+    console.error(`[createFormModule] Exception occurred:`, err);
     return {
       formModule: null,
       error: {

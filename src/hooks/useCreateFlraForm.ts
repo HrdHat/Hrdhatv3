@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../session/AuthProvider";
 import { createFormWithModules } from "../services/forms/createFormWithModules";
+import { getOrCreateFlraModulePreferences } from "../services/userModulePreferences";
 import { supabase } from "../db/supabaseClient";
 
 interface CreateFlraFormOptions {
@@ -25,12 +26,20 @@ export const useCreateFlraForm = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
+  // Function to redirect to login
+  const redirectToLogin = () => {
+    console.log("User not logged in. Redirecting to login page.");
+    navigate("/login"); // Adjust path if your login route is different
+  };
+
   const createNewFlra = async ({
     title = "New FLRA",
     description = "",
   }: CreateFlraFormOptions = {}): Promise<CreateFlraFormResult> => {
     if (!user) {
       console.error("User not authenticated");
+      console.log("User not logged in. Redirecting to login page.");
+      redirectToLogin();
       return { form: null, error: "You must be logged in to create a FLRA" };
     }
 
@@ -49,25 +58,13 @@ export const useCreateFlraForm = () => {
         return { form: null, error: "Failed to fetch FLRA form list" };
       }
 
-      // 2. Get user's preferred modules
-      const { data: userModules, error: modulesError } = await supabase
-        .from("user_form_module_preferences")
-        .select("module_list_id, module_order")
-        .eq("user_id", user.id)
-        .eq("form_list_id", formList.id)
-        .order("module_order");
-
-      if (modulesError) {
-        console.error("Failed to fetch user modules:", modulesError);
-        return { form: null, error: "Failed to fetch user modules" };
-      }
-
-      if (!userModules || userModules.length === 0) {
-        console.error("No modules found for user");
+      // 2. Get or create user's preferred modules (ensures stock modules if none)
+      const prefs = await getOrCreateFlraModulePreferences(user.id);
+      if (!prefs || prefs.length === 0) {
+        console.error("No modules found for user after attempting to assign defaults");
         return { form: null, error: "No modules found for user" };
       }
-
-      const moduleIds = userModules.map((m) => m.module_list_id);
+      const moduleIds = prefs.map((m: any) => m.module_list_id);
 
       // 3. Create form with modules
       const result = await createFormWithModules({

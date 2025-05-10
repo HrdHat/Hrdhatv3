@@ -26,11 +26,23 @@ export async function createFormWithModules({
   description,
   moduleIds,
 }: CreateFormWithModulesInput): Promise<CreateFormWithModulesResult> {
+  // Fallback for title
+  const safeTitle = title && title.trim() !== "" ? title : "New Form";
+
+  // Required input check for moduleIds
+  if (!Array.isArray(moduleIds) || moduleIds.length === 0) {
+    return {
+      form: null,
+      modules: [],
+      error: "Missing input: moduleIds must be a non-empty array",
+    };
+  }
+
   // 1. Create the form
   const { form, error: formError } = await createForm({
     company_id: companyId,
     project_id: projectId,
-    title,
+    title: safeTitle,
     description,
   });
   if (formError || !form) {
@@ -40,6 +52,9 @@ export async function createFormWithModules({
       error: formError?.message || "Failed to create form",
     };
   }
+
+  // Log success
+  console.log(`[createFormWithModules] Successfully created form:`, form);
 
   // 2. Create all modules in order
   const modules: FormModule[] = [];
