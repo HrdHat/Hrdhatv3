@@ -1,10 +1,17 @@
 import { supabase } from "../../db/supabaseClient";
 
+export type CompletionState =
+  | "not_started"
+  | "in_progress"
+  | "completed"
+  | "skipped";
+
 export interface CreateFormModuleInput {
   formId: string;
   moduleId: string;
   moduleOrder: number;
   isRequired?: boolean;
+  completionState?: CompletionState;
 }
 
 export interface FormModule {
@@ -13,6 +20,7 @@ export interface FormModule {
   module_id: string;
   module_order: number;
   is_required: boolean;
+  completion_state: CompletionState;
   created_at: string;
 }
 
@@ -26,13 +34,16 @@ export async function createFormModule({
   moduleId,
   moduleOrder,
   isRequired = true,
+  completionState = "not_started",
 }: CreateFormModuleInput): Promise<{
   formModule: FormModule | null;
   error: SupabaseError | null;
 }> {
   try {
     // 1. Verify module exists and is active
-    console.log(`[createFormModule] Checking if module ${moduleId} exists and is active...`);
+    console.log(
+      `[createFormModule] Checking if module ${moduleId} exists and is active...`
+    );
     const { data: module, error: moduleError } = await supabase
       .from("module_list")
       .select("id")
@@ -41,7 +52,10 @@ export async function createFormModule({
       .single();
 
     if (moduleError || !module) {
-      console.error(`[createFormModule] Module not found or inactive: ${moduleId}`, moduleError);
+      console.error(
+        `[createFormModule] Module not found or inactive: ${moduleId}`,
+        moduleError
+      );
       return {
         formModule: null,
         error: { message: "Module not found or inactive" },
@@ -49,7 +63,9 @@ export async function createFormModule({
     }
 
     // 2. Create form module
-    console.log(`[createFormModule] Creating form module for formId=${formId}, moduleId=${moduleId}, order=${moduleOrder}, isRequired=${isRequired}`);
+    console.log(
+      `[createFormModule] Creating form module for formId=${formId}, moduleId=${moduleId}, order=${moduleOrder}, isRequired=${isRequired}, completionState=${completionState}`
+    );
     const { data, error } = await supabase
       .from("form_modules")
       .insert([
@@ -58,6 +74,7 @@ export async function createFormModule({
           module_id: moduleId,
           module_order: moduleOrder,
           is_required: isRequired,
+          completion_state: completionState,
         },
       ])
       .select()
@@ -72,7 +89,10 @@ export async function createFormModule({
     }
 
     if (!data || !data.id) {
-      console.error(`[createFormModule] Invalid form_module response from Supabase`, data);
+      console.error(
+        `[createFormModule] Invalid form_module response from Supabase`,
+        data
+      );
       return {
         formModule: null,
         error: { message: "Invalid form_module response from Supabase" },
