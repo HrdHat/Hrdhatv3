@@ -25,6 +25,7 @@ export interface UploadResult {
   signedUrl: string;
   storagePath: string;
   metadata: FileMetadata;
+  previewUrl: string;
 }
 
 export class FileValidationError extends Error {
@@ -148,10 +149,14 @@ export class FileStorageService {
         throw new Error(`Failed to generate signed URL: ${urlError.message}`);
       }
 
+      // Create a local preview URL for instant thumbnail display
+      const previewUrl = URL.createObjectURL(file);
+
       return {
         signedUrl,
         storagePath,
         metadata,
+        previewUrl,
       };
     } catch (error) {
       if (error instanceof FileValidationError) {

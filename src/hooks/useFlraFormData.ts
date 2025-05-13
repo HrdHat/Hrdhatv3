@@ -65,7 +65,7 @@ export const useFlraFormData = (formId: string | null) => {
               .from("form_module_fields")
               .select("*")
               .eq("form_module_id", module.id)
-              .order("order");
+              .order("field_order");
 
             if (fieldsError) throw fieldsError;
 
