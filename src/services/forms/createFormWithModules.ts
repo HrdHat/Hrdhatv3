@@ -6,6 +6,8 @@ import {
 } from "./createFormModule";
 import { createFormModuleField } from "./createFormModuleField";
 import { fetchModuleFields, FetchModuleFieldsError } from "./fetchModuleFields";
+import { cloneFieldsFromModule } from "./cloneFieldsFromModule";
+import { supabase } from '../../db/supabaseClient';
 
 export interface CreateFormWithModulesInput {
   companyId?: string;
@@ -95,77 +97,44 @@ export async function createFormWithModules({
     }
     modules.push(formModule);
 
-    // Fetch and create fields for this module
-    const { fields, error: fieldsError } = await fetchModuleFields(moduleId);
-    if (fieldsError) {
-      if (import.meta.env.DEV) {
-        console.error(
-          `[createFormWithModules] Error fetching fields for module ${moduleId}:`,
-          fieldsError
-        );
-      }
+    // Fetch module metadata to check uses_fields and renderer_key
+    const { data: moduleMeta, error: moduleMetaError } = await supabase
+      .from("modules")
+      .select("*")
+      .eq("id", moduleId)
+      .single();
+
+    if (moduleMetaError) {
       warnings.push({
         moduleId,
-        message: fieldsError.message,
+        message: `Failed to fetch module metadata: ${moduleMetaError.message}`,
         code: "MODULE_FIELDS_FETCH_ERROR",
       });
-      continue;
+      continue; // skip to next module
     }
 
-    // Validate field count for critical modules
-    const criticalModules = ["general_info", "hazards", "controls"];
-    if (
-      criticalModules.includes(moduleId) &&
-      (!fields || fields.length === 0)
-    ) {
-      warnings.push({
-        moduleId,
-        message: `Critical module ${moduleId} has no fields defined`,
-        code: "MODULE_FIELDS_FETCH_ERROR",
-      });
-      if (import.meta.env.DEV) {
-        console.warn(
-          `[createFormWithModules] Critical module ${moduleId} has no fields`
-        );
-      }
-    }
+    const usesFields = moduleMeta?.uses_fields ?? true;
+    const rendererKey = moduleMeta?.renderer_key;
 
-    // Create each field
-    for (const field of fields) {
-      // Type guard for defaultValue based on field type
-      const defaultValue =
-        field.default_value !== undefined
-          ? getTypedDefaultValue(field.default_value, field.type)
-          : undefined;
-
-      const { error: fieldError } = await createFormModuleField({
-        formId: form.id,
-        formModuleId: formModule.id,
-        moduleFieldId: field.id,
-        name: field.name,
-        label: field.label,
-        type: field.type,
-        fieldOrder: field.field_order,
-        required: field.required,
-        defaultValue: defaultValue?.toString(),
-        version: field.version,
-      });
-
-      if (fieldError) {
+    if (usesFields) {
+      try {
+        const count = await cloneFieldsFromModule({
+          moduleId,
+          formId: form.id,
+          formModuleId: formModule.id,
+        });
         if (import.meta.env.DEV) {
-          console.error(
-            `[createFormWithModules] Error creating field ${field.name} for module ${moduleId}:`,
-            fieldError
-          );
+          console.info(`[formModule] ${count ?? 'unknown'} fields cloned into ${formModule.id}`);
         }
+      } catch (err: any) {
         warnings.push({
           moduleId,
-          fieldName: field.name,
-          message: fieldError.message,
+          message: err.message || "Failed to clone fields",
           code: "FIELD_CREATION_ERROR",
         });
-        continue;
       }
+    } else if (rendererKey === "TaskHazardModule") {
+      // await seedTaskHazardDefaults(form.id, formModule.id);
     }
   }
 
