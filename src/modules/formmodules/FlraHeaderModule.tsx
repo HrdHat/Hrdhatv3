@@ -1,3 +1,6 @@
+// @cursor-ai
+// Custom-rendered header module. Fields are hardcoded.
+// Do not auto-insert or bind dynamic field logic here.
 import React from "react";
 import { FlraHeader } from "../../types/formTypes";
 

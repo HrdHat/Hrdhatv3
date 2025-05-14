@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ModuleWithRenderer } from "./rendererRegistry";
+import { ModuleWithRenderer } from "../types/modules";
 
 interface GenericModuleRendererProps {
   module: ModuleWithRenderer;
@@ -49,6 +49,7 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
     const isInvalid = showError(field);
     switch (type) {
       case "boolean":
+      case "checkbox":
         return (
           <input
             type="checkbox"
@@ -82,6 +83,21 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
         return (
           <input
             type="date"
+            name={field.name}
+            id={id}
+            value={values[field.name]}
+            onChange={e => handleChange(field.name, e.target.value)}
+            onBlur={() => handleBlur(field.name)}
+            required={isRequired}
+            aria-required={isRequired}
+            aria-invalid={isInvalid}
+            aria-describedby={isInvalid ? errorId : undefined}
+          />
+        );
+      case "time":
+        return (
+          <input
+            type="time"
             name={field.name}
             id={id}
             value={values[field.name]}
@@ -130,6 +146,7 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
         );
       // No file case here
       default:
+        console.warn("Unknown field type:", type, field);
         return (
           <input
             type="text"
@@ -155,40 +172,19 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
   };
 
   return (
-    <div className={className}>
-      <h3>{module.label}</h3>
-      <div>
-        {module.fields?.map((field: any) => {
-          const id = `field_${field.name}`;
-          const errorId = `error_${field.name}`;
-          // Skip file fields
-          if (
-            field.type === "file" ||
-            field.type === "file_upload" // in case DB uses a different name
-          ) {
-            return null;
-          }
-          return (
-            <div key={field.id}>
-              <label htmlFor={id}>
-                {field.label}
-                {field.required && <span>*</span>}
-              </label>
-              {renderInput(field)}
-              {showError(field) && (
-                <div
-                  id={errorId}
-                  style={{ color: "red", fontSize: 12 }}
-                  role="alert"
-                >
-                  This field is required
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <>
+      <h2>{module.label}</h2>
+      {module.fields?.map((field: any) => {
+        // Skip file fields
+        if (
+          field.type === "file" ||
+          field.type === "file_upload"
+        ) {
+          return null;
+        }
+        return renderInput(field);
+      })}
+    </>
   );
 };
 
