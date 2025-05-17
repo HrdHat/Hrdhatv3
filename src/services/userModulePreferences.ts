@@ -5,14 +5,14 @@ import { supabase } from '../db/supabaseClient';
  * Inserts into user_form_module_preferences if not already present.
  */
 export async function assignDefaultModulesToUser(userId: string, formName: string) {
-  // 1. Get the form_list id for the given form name
-  const { data: formList, error: formListError } = await supabase
-    .from('form_list')
+  // 1. Get the form_templates id for the given form name
+  const { data: formTemplate, error: formTemplateError } = await supabase
+    .from('form_templates')
     .select('id')
     .eq('name', formName)
     .single();
-  if (formListError || !formList) throw new Error('Could not find form_list for ' + formName);
-  const formListId = formList.id;
+  if (formTemplateError || !formTemplate) throw new Error('Could not find form_templates for ' + formName);
+  const formTemplateId = formTemplate.id;
 
   // 2. Get all default modules
   const { data: modules, error: modulesError } = await supabase
@@ -25,7 +25,7 @@ export async function assignDefaultModulesToUser(userId: string, formName: strin
   // 3. Prepare preferences rows
   const preferences = modules.map((mod, idx) => ({
     user_id: userId,
-    form_list_id: formListId,
+    form_list_id: formTemplateId,
     module_list_id: mod.id,
     module_order: idx,
     is_required: true,
@@ -53,21 +53,21 @@ export async function assignDefaultModulesToUser(userId: string, formName: strin
  * @returns The user's module preferences for FLRA (ordered)
  */
 export async function getOrCreateFlraModulePreferences(userId: string) {
-  // 1. Get the FLRA form_list id
-  const { data: formList, error: formListError } = await supabase
-    .from('form_list')
+  // 1. Get the FLRA form_templates id
+  const { data: formTemplate, error: formTemplateError } = await supabase
+    .from('form_templates')
     .select('id')
     .eq('name', 'FLRA')
     .single();
-  if (formListError || !formList) throw new Error('FLRA form_list not found');
-  const flraFormListId = formList.id;
+  if (formTemplateError || !formTemplate) throw new Error('FLRA form_templates not found');
+  const flraFormTemplateId = formTemplate.id;
 
   // 2. Query for existing preferences
   let { data: prefs, error: prefsError } = await supabase
     .from('user_form_module_preferences')
     .select('*')
     .eq('user_id', userId)
-    .eq('form_list_id', flraFormListId)
+    .eq('form_list_id', flraFormTemplateId)
     .order('module_order', { ascending: true });
 
   if (prefsError) throw prefsError;
@@ -80,7 +80,7 @@ export async function getOrCreateFlraModulePreferences(userId: string) {
       .from('user_form_module_preferences')
       .select('*')
       .eq('user_id', userId)
-      .eq('form_list_id', flraFormListId)
+      .eq('form_list_id', flraFormTemplateId)
       .order('module_order', { ascending: true });
     if (newPrefsError) throw newPrefsError;
     prefs = newPrefs;

@@ -1,39 +1,17 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
-CREATE TABLE companies (
+CREATE TABLE IF NOT EXISTS modules (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name text NOT NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
-);
-
-CREATE TABLE flra_header (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    form_module_id uuid,
-    form_number text,
-    form_name text,
-    form_date date,
-    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
-);
-
-CREATE TABLE flra_photos (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    form_id uuid NOT NULL,
-    form_module_id uuid,
-    photo_url text NOT NULL,
+    name text NOT NULL UNIQUE,
+    label text NOT NULL,
     description text,
-    uploaded_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
+    version integer NOT NULL DEFAULT 1,
+    scope text NOT NULL DEFAULT 'stock',
+    company_id uuid,
+    project_id uuid,
+    is_active boolean NOT NULL DEFAULT true,
+    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
-CREATE TABLE form_data (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    form_id uuid NOT NULL,
-    module_id uuid NOT NULL,
-    data jsonb NOT NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
-    updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
-);
-
-CREATE TABLE form_data_photos (
+CREATE TABLE IF NOT EXISTS form_data_photos (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_id uuid NOT NULL,
     form_module_id uuid NOT NULL,
@@ -53,7 +31,35 @@ CREATE TABLE form_data_photos (
     deleted_at timestamp with time zone
 );
 
-CREATE TABLE form_list (
+CREATE TABLE IF NOT EXISTS flra_header (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    form_module_id uuid,
+    form_number text,
+    form_name text,
+    form_date date,
+    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+    user_form_id text
+);
+
+CREATE TABLE IF NOT EXISTS flra_photos (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    form_id uuid NOT NULL,
+    form_module_id uuid,
+    photo_url text NOT NULL,
+    description text,
+    uploaded_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE TABLE IF NOT EXISTS form_data (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    form_id uuid NOT NULL,
+    module_id uuid NOT NULL,
+    data jsonb NOT NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE TABLE IF NOT EXISTS form_list (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     name text NOT NULL,
     description text,
@@ -63,7 +69,7 @@ CREATE TABLE form_list (
     updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
-CREATE TABLE form_module_fields (
+CREATE TABLE IF NOT EXISTS form_module_fields (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_id uuid NOT NULL,
     form_module_id uuid NOT NULL,
@@ -77,17 +83,17 @@ CREATE TABLE form_module_fields (
     version integer NOT NULL DEFAULT 1
 );
 
-CREATE TABLE form_modules (
+CREATE TABLE IF NOT EXISTS form_modules (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_id uuid NOT NULL,
     module_id uuid NOT NULL,
     module_order integer NOT NULL,
     is_required boolean NOT NULL DEFAULT true,
     created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
-    completion_state text NOT NULL DEFAULT 'not_started'::text
+    completion_state text NOT NULL DEFAULT 'not_started'
 );
 
-CREATE TABLE form_template_modules (
+CREATE TABLE IF NOT EXISTS form_template_modules (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_list_id uuid NOT NULL,
     module_list_id uuid NOT NULL,
@@ -95,11 +101,11 @@ CREATE TABLE form_template_modules (
     is_required boolean NOT NULL DEFAULT true
 );
 
-CREATE TABLE forms (
+CREATE TABLE IF NOT EXISTS forms (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_number text,
     created_by uuid,
-    status text DEFAULT 'draft'::text,
+    status text DEFAULT 'draft',
     last_modified timestamp with time zone DEFAULT timezone('utc'::text, now()),
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     auto_archived boolean DEFAULT false,
@@ -113,7 +119,7 @@ CREATE TABLE forms (
     user_id uuid
 );
 
-CREATE TABLE general_information (
+CREATE TABLE IF NOT EXISTS general_information (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_module_id uuid,
     project_name text,
@@ -129,7 +135,7 @@ CREATE TABLE general_information (
     created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
-CREATE TABLE module_fields (
+CREATE TABLE IF NOT EXISTS module_fields (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     module_id uuid NOT NULL,
     name text NOT NULL,
@@ -139,12 +145,12 @@ CREATE TABLE module_fields (
     field_order integer NOT NULL,
     default_value text,
     version integer NOT NULL DEFAULT 1,
-    scope text NOT NULL DEFAULT 'stock'::text,
+    scope text NOT NULL DEFAULT 'stock',
     company_id uuid,
     project_id uuid
 );
 
-CREATE TABLE module_list (
+CREATE TABLE IF NOT EXISTS module_list (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     name text NOT NULL,
     description text,
@@ -155,22 +161,7 @@ CREATE TABLE module_list (
     updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
-CREATE TABLE modules (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name text NOT NULL,
-    label text NOT NULL,
-    description text,
-    version integer NOT NULL DEFAULT 1,
-    scope text NOT NULL DEFAULT 'stock'::text,
-    company_id uuid,
-    project_id uuid,
-    is_active boolean NOT NULL DEFAULT true,
-    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
-    renderer_key text NOT NULL,
-    uses_fields boolean DEFAULT true
-);
-
-CREATE TABLE ppe_platform_inspection (
+CREATE TABLE IF NOT EXISTS ppe_platform_inspection (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_id uuid NOT NULL,
     form_module_id uuid,
@@ -194,7 +185,7 @@ CREATE TABLE ppe_platform_inspection (
     created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
-CREATE TABLE pre_job_task_checklist (
+CREATE TABLE IF NOT EXISTS pre_job_task_checklist (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_id uuid NOT NULL,
     form_module_id uuid,
@@ -221,7 +212,7 @@ CREATE TABLE pre_job_task_checklist (
     created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
-CREATE TABLE profiles (
+CREATE TABLE IF NOT EXISTS profiles (
     id uuid PRIMARY KEY,
     email text NOT NULL,
     full_name text NOT NULL,
@@ -236,14 +227,14 @@ CREATE TABLE profiles (
     default_form_name text
 );
 
-CREATE TABLE projects (
+CREATE TABLE IF NOT EXISTS projects (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id uuid,
     name text NOT NULL,
     created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
-CREATE TABLE signatures (
+CREATE TABLE IF NOT EXISTS signatures (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_id uuid NOT NULL,
     form_module_id uuid,
@@ -252,10 +243,13 @@ CREATE TABLE signatures (
     signed_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
     signature_hash text,
     role text,
-    metadata jsonb
+    metadata jsonb,
+    signed_by uuid,
+    is_deleted boolean DEFAULT false,
+    deleted_at timestamp with time zone
 );
 
-CREATE TABLE task_hazard_control (
+CREATE TABLE IF NOT EXISTS task_hazard_control (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_id uuid NOT NULL,
     form_module_id uuid,
@@ -267,7 +261,7 @@ CREATE TABLE task_hazard_control (
     created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
-CREATE TABLE user_form_module_preferences (
+CREATE TABLE IF NOT EXISTS user_form_module_preferences (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id uuid NOT NULL,
     form_list_id uuid NOT NULL,
@@ -277,269 +271,116 @@ CREATE TABLE user_form_module_preferences (
     created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
+CREATE TABLE IF NOT EXISTS companies (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name text NOT NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
 -- Foreign Key Constraints
-ALTER TABLE flra_header ADD CONSTRAINT fk_flra_header_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE flra_photos ADD CONSTRAINT fk_flra_photos_form_id FOREIGN KEY (form_id) REFERENCES forms(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE flra_photos ADD CONSTRAINT fk_flra_photos_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE form_data ADD CONSTRAINT fk_form_data_form_id FOREIGN KEY (form_id) REFERENCES forms(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE form_data ADD CONSTRAINT fk_form_data_module_id FOREIGN KEY (module_id) REFERENCES form_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE form_data_photos ADD CONSTRAINT fk_form_data_photos_form_id FOREIGN KEY (form_id) REFERENCES forms(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE form_data_photos ADD CONSTRAINT fk_form_data_photos_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE form_data_photos ADD CONSTRAINT fk_form_data_photos_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES profiles(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE form_module_fields ADD CONSTRAINT fk_form_module_fields_form_id FOREIGN KEY (form_id) REFERENCES forms(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE form_module_fields ADD CONSTRAINT fk_form_module_fields_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE form_module_fields ADD CONSTRAINT fk_form_module_fields_module_field_id FOREIGN KEY (module_field_id) REFERENCES module_fields(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE form_modules ADD CONSTRAINT fk_form_modules_form_id FOREIGN KEY (form_id) REFERENCES forms(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE form_template_modules ADD CONSTRAINT fk_form_template_modules_form_list_id FOREIGN KEY (form_list_id) REFERENCES form_list(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE form_template_modules ADD CONSTRAINT fk_form_template_modules_module_list_id FOREIGN KEY (module_list_id) REFERENCES module_list(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE forms ADD CONSTRAINT fk_forms_company_id FOREIGN KEY (company_id) REFERENCES companies(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE forms ADD CONSTRAINT fk_forms_created_by FOREIGN KEY (created_by) REFERENCES profiles(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE forms ADD CONSTRAINT fk_forms_project_id FOREIGN KEY (project_id) REFERENCES projects(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE forms ADD CONSTRAINT fk_forms_user_id FOREIGN KEY (user_id) REFERENCES profiles(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE general_information ADD CONSTRAINT fk_general_information_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE module_fields ADD CONSTRAINT fk_module_fields_company_id FOREIGN KEY (company_id) REFERENCES companies(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE module_fields ADD CONSTRAINT fk_module_fields_module_id FOREIGN KEY (module_id) REFERENCES modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE module_fields ADD CONSTRAINT fk_module_fields_project_id FOREIGN KEY (project_id) REFERENCES projects(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE modules ADD CONSTRAINT fk_modules_company_id FOREIGN KEY (company_id) REFERENCES companies(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE modules ADD CONSTRAINT fk_modules_project_id FOREIGN KEY (project_id) REFERENCES projects(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE ppe_platform_inspection ADD CONSTRAINT fk_ppe_platform_inspection_form_id FOREIGN KEY (form_id) REFERENCES forms(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE ppe_platform_inspection ADD CONSTRAINT fk_ppe_platform_inspection_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE pre_job_task_checklist ADD CONSTRAINT fk_pre_job_task_checklist_form_id FOREIGN KEY (form_id) REFERENCES forms(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE pre_job_task_checklist ADD CONSTRAINT fk_pre_job_task_checklist_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE projects ADD CONSTRAINT fk_projects_company_id FOREIGN KEY (company_id) REFERENCES companies(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE signatures ADD CONSTRAINT fk_signatures_form_id FOREIGN KEY (form_id) REFERENCES forms(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE signatures ADD CONSTRAINT fk_signatures_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE task_hazard_control ADD CONSTRAINT fk_task_hazard_control_form_id FOREIGN KEY (form_id) REFERENCES forms(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE task_hazard_control ADD CONSTRAINT fk_task_hazard_control_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE user_form_module_preferences ADD CONSTRAINT fk_user_form_module_preferences_form_list_id FOREIGN KEY (form_list_id) REFERENCES form_list(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE user_form_module_preferences ADD CONSTRAINT fk_user_form_module_preferences_module_list_id FOREIGN KEY (module_list_id) REFERENCES module_list(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
-ALTER TABLE user_form_module_preferences ADD CONSTRAINT fk_user_form_module_preferences_user_id FOREIGN KEY (user_id) REFERENCES profiles(id) ON UPDATE NO ACTION ON DELETE NO ACTION;
+ALTER TABLE profiles
+    ADD CONSTRAINT fk_profiles_id_users FOREIGN KEY (id) REFERENCES users(id);
 
--- Ensure PRIMARY KEY constraints for all listed tables
-ALTER TABLE profiles                     ADD CONSTRAINT pk_profiles_id PRIMARY KEY (id);
-ALTER TABLE form_list                    ADD CONSTRAINT pk_form_list_id PRIMARY KEY (id);
-ALTER TABLE module_list                  ADD CONSTRAINT pk_module_list_id PRIMARY KEY (id);
-ALTER TABLE forms                        ADD CONSTRAINT pk_forms_id PRIMARY KEY (id);
-ALTER TABLE form_template_modules        ADD CONSTRAINT pk_form_template_modules_id PRIMARY KEY (id);
-ALTER TABLE form_modules                 ADD CONSTRAINT pk_form_modules_id PRIMARY KEY (id);
-ALTER TABLE user_form_module_preferences ADD CONSTRAINT pk_user_form_module_preferences_id PRIMARY KEY (id);
-ALTER TABLE flra_header                  ADD CONSTRAINT pk_flra_header_id PRIMARY KEY (id);
-ALTER TABLE general_information          ADD CONSTRAINT pk_general_information_id PRIMARY KEY (id);
-ALTER TABLE pre_job_task_checklist       ADD CONSTRAINT pk_pre_job_task_checklist_id PRIMARY KEY (id);
-ALTER TABLE task_hazard_control          ADD CONSTRAINT pk_task_hazard_control_id PRIMARY KEY (id);
-ALTER TABLE flra_photos                  ADD CONSTRAINT pk_flra_photos_id PRIMARY KEY (id);
-ALTER TABLE signatures                   ADD CONSTRAINT pk_signatures_id PRIMARY KEY (id);
-ALTER TABLE ppe_platform_inspection      ADD CONSTRAINT pk_ppe_platform_inspection_id PRIMARY KEY (id);
-ALTER TABLE form_data                    ADD CONSTRAINT pk_form_data_id PRIMARY KEY (id);
-ALTER TABLE companies                    ADD CONSTRAINT pk_companies_id PRIMARY KEY (id);
-ALTER TABLE projects                     ADD CONSTRAINT pk_projects_id PRIMARY KEY (id);
-ALTER TABLE form_data_photos             ADD CONSTRAINT pk_form_data_photos_id PRIMARY KEY (id);
-ALTER TABLE modules                      ADD CONSTRAINT pk_modules_id PRIMARY KEY (id);
-ALTER TABLE module_fields                ADD CONSTRAINT pk_module_fields_id PRIMARY KEY (id);
-ALTER TABLE form_module_fields           ADD CONSTRAINT pk_form_module_fields_id PRIMARY KEY (id);
+ALTER TABLE forms
+    ADD CONSTRAINT fk_forms_created_by_profiles FOREIGN KEY (created_by) REFERENCES profiles(id);
+    ADD CONSTRAINT fk_forms_company_id_companies FOREIGN KEY (company_id) REFERENCES companies(id);
+    ADD CONSTRAINT fk_forms_project_id_projects FOREIGN KEY (project_id) REFERENCES projects(id);
+    ADD CONSTRAINT fk_forms_user_id_profiles FOREIGN KEY (user_id) REFERENCES profiles(id);
 
--- Unique Constraints
-ALTER TABLE profiles ADD CONSTRAINT profiles_email_key UNIQUE (email);
-ALTER TABLE form_list ADD CONSTRAINT form_list_name_key UNIQUE (name);
-ALTER TABLE module_list ADD CONSTRAINT module_list_name_key UNIQUE (name);
-ALTER TABLE form_data ADD CONSTRAINT form_data_form_module_unique UNIQUE (form_id, module_id);
-ALTER TABLE companies ADD CONSTRAINT companies_name_key UNIQUE (name);
-ALTER TABLE form_data_photos ADD CONSTRAINT unique_storage_path UNIQUE (storage_path);
-ALTER TABLE modules ADD CONSTRAINT modules_name_key UNIQUE (name);
-ALTER TABLE module_fields ADD CONSTRAINT module_fields_module_id_name_key UNIQUE (module_id, name);
-ALTER TABLE form_module_fields ADD CONSTRAINT form_module_fields_form_module_id_name_key UNIQUE (form_module_id, name);
-ALTER TABLE form_list ADD CONSTRAINT form_list_name_unique UNIQUE (name);
-ALTER TABLE modules ADD CONSTRAINT modules_name_unique UNIQUE (name);
-ALTER TABLE module_fields ADD CONSTRAINT module_fields_name_unique UNIQUE (module_id, name);
-ALTER TABLE user_form_module_preferences ADD CONSTRAINT user_form_module_preferences_unique UNIQUE (user_id, form_list_id, module_list_id);
+ALTER TABLE form_template_modules
+    ADD CONSTRAINT fk_form_template_modules_form_list FOREIGN KEY (form_list_id) REFERENCES form_list(id),
+    ADD CONSTRAINT fk_form_template_modules_module_list FOREIGN KEY (module_list_id) REFERENCES module_list(id);
 
--- Indexes
-CREATE INDEX idx_form_data_form_id ON form_data(form_id);
-CREATE INDEX idx_form_data_module_id ON form_data(module_id);
-CREATE INDEX idx_form_data_photos_form_id ON form_data_photos(form_id);
-CREATE INDEX idx_form_data_photos_is_deleted ON form_data_photos(is_deleted);
-CREATE INDEX idx_form_data_photos_sort_order ON form_data_photos(sort_order);
-CREATE INDEX idx_form_data_photos_tag ON form_data_photos(tag);
-CREATE INDEX idx_form_data_photos_uploaded_by ON form_data_photos(uploaded_by);
-CREATE INDEX idx_form_modules_completion_state ON form_modules(completion_state);
-CREATE INDEX idx_form_modules_form_id ON form_modules(form_id);
-CREATE INDEX idx_forms_created_at ON forms(created_at);
-CREATE INDEX idx_forms_created_by ON forms(created_by);
-CREATE INDEX idx_forms_status ON forms(status);
-CREATE INDEX idx_signatures_hash ON signatures(signature_hash);
-CREATE INDEX idx_user_form_module_preferences_user_id ON user_form_module_preferences(user_id);
+ALTER TABLE form_modules
+    ADD CONSTRAINT fk_form_modules_form_id_forms FOREIGN KEY (form_id) REFERENCES forms(id),
+    ADD CONSTRAINT fk_form_modules_module_id_modules FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE;
 
--- Enable RLS on all relevant tables
-ALTER TABLE form_data ENABLE ROW LEVEL SECURITY;
-ALTER TABLE form_data_photos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE form_modules ENABLE ROW LEVEL SECURITY;
-ALTER TABLE forms ENABLE ROW LEVEL SECURITY;
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_form_module_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_form_module_preferences
+    ADD CONSTRAINT fk_user_form_module_preferences_user_id FOREIGN KEY (user_id) REFERENCES profiles(id),
+    ADD CONSTRAINT fk_user_form_module_preferences_form_list_id FOREIGN KEY (form_list_id) REFERENCES form_list(id),
+    ADD CONSTRAINT fk_user_form_module_preferences_module_list_id FOREIGN KEY (module_list_id) REFERENCES module_list(id);
 
--- Policies for form_data
-CREATE POLICY "Users can read their own form data"
-  ON form_data FOR SELECT USING (
-    EXISTS (SELECT 1 FROM forms WHERE forms.id = form_data.form_id AND forms.created_by = auth.uid())
-  );
+ALTER TABLE flra_header
+    ADD CONSTRAINT fk_flra_header_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id);
 
-CREATE POLICY "Users can update their own form data"
-  ON form_data FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM forms WHERE forms.id = form_data.form_id AND forms.created_by = auth.uid())
-  );
+ALTER TABLE general_information
+    ADD CONSTRAINT fk_general_information_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id);
 
--- Policies for form_data_photos
-CREATE POLICY "Users can insert photos for their forms"
-  ON form_data_photos FOR INSERT WITH CHECK (
-    (EXISTS (SELECT 1 FROM forms WHERE forms.id = form_data_photos.form_id AND forms.created_by = auth.uid())) AND (auth.uid() = uploaded_by)
-  );
+ALTER TABLE pre_job_task_checklist
+    ADD CONSTRAINT fk_pre_job_task_checklist_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
+    ADD CONSTRAINT fk_pre_job_task_checklist_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id);
 
-CREATE POLICY "Users can soft delete their own photos"
-  ON form_data_photos FOR UPDATE USING (
-    (NOT is_deleted) AND (EXISTS (SELECT 1 FROM forms WHERE forms.id = form_data_photos.form_id AND forms.created_by = auth.uid())) AND (auth.uid() = uploaded_by)
-  );
+ALTER TABLE task_hazard_control
+    ADD CONSTRAINT fk_task_hazard_control_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
+    ADD CONSTRAINT fk_task_hazard_control_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id);
 
-CREATE POLICY "Users can update their own photos"
-  ON form_data_photos FOR UPDATE USING (
-    (NOT is_deleted) AND (EXISTS (SELECT 1 FROM forms WHERE forms.id = form_data_photos.form_id AND forms.created_by = auth.uid())) AND (auth.uid() = uploaded_by)
-  );
+ALTER TABLE flra_photos
+    ADD CONSTRAINT fk_flra_photos_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
+    ADD CONSTRAINT fk_flra_photos_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id);
 
-CREATE POLICY "Users can view photos for their forms"
-  ON form_data_photos FOR SELECT USING (
-    (NOT is_deleted) AND (EXISTS (SELECT 1 FROM forms WHERE forms.id = form_data_photos.form_id AND forms.created_by = auth.uid()))
-  );
+ALTER TABLE signatures
+    ADD CONSTRAINT fk_signatures_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
+    ADD CONSTRAINT fk_signatures_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id),
+    ADD CONSTRAINT fk_signatures_signed_by_users FOREIGN KEY (signed_by) REFERENCES users(id);
 
--- Policies for form_modules
-CREATE POLICY "Users can access modules of their own forms"
-  ON form_modules FOR SELECT USING (
-    EXISTS (SELECT 1 FROM forms WHERE forms.id = form_modules.form_id AND forms.user_id = auth.uid())
-  );
+ALTER TABLE ppe_platform_inspection
+    ADD CONSTRAINT fk_ppe_platform_inspection_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
+    ADD CONSTRAINT fk_ppe_platform_inspection_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id);
 
-CREATE POLICY "Users can delete modules of their own forms"
-  ON form_modules FOR DELETE USING (
-    EXISTS (SELECT 1 FROM forms WHERE forms.id = form_modules.form_id AND forms.user_id = auth.uid())
-  );
+ALTER TABLE form_data
+    ADD CONSTRAINT fk_form_data_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
+    ADD CONSTRAINT fk_form_data_module_id FOREIGN KEY (module_id) REFERENCES form_modules(id);
 
-CREATE POLICY "Users can insert modules for their own forms"
-  ON form_modules FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM forms WHERE forms.id = form_modules.form_id AND forms.user_id = auth.uid())
-  );
+ALTER TABLE projects
+    ADD CONSTRAINT fk_projects_company_id FOREIGN KEY (company_id) REFERENCES companies(id);
 
-CREATE POLICY "Users can update modules of their own forms"
-  ON form_modules FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM forms WHERE forms.id = form_modules.form_id AND forms.user_id = auth.uid())
-  );
+ALTER TABLE form_data_photos
+    ADD CONSTRAINT fk_form_data_photos_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
+    ADD CONSTRAINT fk_form_data_photos_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id),
+    ADD CONSTRAINT fk_form_data_photos_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES profiles(id);
 
--- Policies for forms
-CREATE POLICY "Users can create their own forms"
-  ON forms FOR INSERT WITH CHECK (
-    auth.uid() = user_id
-  );
+ALTER TABLE modules
+    ADD CONSTRAINT fk_modules_company_id FOREIGN KEY (company_id) REFERENCES companies(id),
+    ADD CONSTRAINT fk_modules_project_id FOREIGN KEY (project_id) REFERENCES projects(id);
 
-CREATE POLICY "Users can delete their own forms"
-  ON forms FOR DELETE USING (
-    auth.uid() = user_id
-  );
+ALTER TABLE module_fields
+    ADD CONSTRAINT fk_module_fields_module_id FOREIGN KEY (module_id) REFERENCES modules(id),
+    ADD CONSTRAINT fk_module_fields_company_id FOREIGN KEY (company_id) REFERENCES companies(id),
+    ADD CONSTRAINT fk_module_fields_project_id FOREIGN KEY (project_id) REFERENCES projects(id);
 
-CREATE POLICY "Users can insert forms"
-  ON forms FOR INSERT WITH CHECK (
-    auth.uid() = created_by
-  );
+ALTER TABLE form_module_fields
+    ADD CONSTRAINT fk_form_module_fields_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
+    ADD CONSTRAINT fk_form_module_fields_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id),
+    ADD CONSTRAINT fk_form_module_fields_module_field_id FOREIGN KEY (module_field_id) REFERENCES module_fields(id);
 
-CREATE POLICY "Users can read their own forms"
-  ON forms FOR SELECT USING (
-    auth.uid() = created_by
-  );
+-- Indexes and Unique Constraints
+-- Primary keys are already defined in CREATE TABLE statements.
 
-CREATE POLICY "Users can update their own forms"
-  ON forms FOR UPDATE USING (
-    auth.uid() = user_id
-  ) WITH CHECK (
-    auth.uid() = user_id
-  );
+-- Unique constraints
+CREATE UNIQUE INDEX IF NOT EXISTS companies_name_key ON companies(name);
+CREATE UNIQUE INDEX IF NOT EXISTS flra_header_unique_form_number ON flra_header(form_number);
+CREATE UNIQUE INDEX IF NOT EXISTS form_data_form_module_unique ON form_data(form_id, module_id);
+CREATE UNIQUE INDEX IF NOT EXISTS form_list_name_key ON form_list(name);
+CREATE UNIQUE INDEX IF NOT EXISTS form_list_name_unique ON form_list(name);
+CREATE UNIQUE INDEX IF NOT EXISTS form_module_fields_form_module_id_name_key ON form_module_fields(form_module_id, name);
+CREATE UNIQUE INDEX IF NOT EXISTS module_fields_module_id_name_key ON module_fields(module_id, name);
+CREATE UNIQUE INDEX IF NOT EXISTS module_fields_name_unique ON module_fields(module_id, name);
+CREATE UNIQUE INDEX IF NOT EXISTS module_list_name_key ON module_list(name);
+CREATE UNIQUE INDEX IF NOT EXISTS modules_name_key ON modules(name);
+CREATE UNIQUE INDEX IF NOT EXISTS modules_name_unique ON modules(name);
+CREATE UNIQUE INDEX IF NOT EXISTS user_form_module_preferences_unique ON user_form_module_preferences(user_id, form_list_id, module_list_id);
 
-CREATE POLICY "Users can view their own forms"
-  ON forms FOR SELECT USING (
-    auth.uid() = user_id
-  );
-
--- Policies for profiles
-CREATE POLICY "Allow inserts for self or trigger"
-  ON profiles FOR INSERT WITH CHECK (
-    (auth.uid() = id) OR (auth.uid() IS NULL)
-  );
-
-CREATE POLICY "Users can update their own profile"
-  ON profiles FOR UPDATE USING (
-    auth.uid() = id
-  );
-
-CREATE POLICY "Users can view their own profile"
-  ON profiles FOR SELECT USING (
-    auth.uid() = id
-  );
-
--- Policies for user_form_module_preferences
-CREATE POLICY "Users can access their own module preferences"
-  ON user_form_module_preferences FOR SELECT USING (
-    auth.uid() = user_id
-  );
-
-CREATE POLICY "Users can delete their own module preferences"
-  ON user_form_module_preferences FOR DELETE USING (
-    auth.uid() = user_id
-  );
-
-CREATE POLICY "Users can insert their own module preferences"
-  ON user_form_module_preferences FOR INSERT WITH CHECK (
-    auth.uid() = user_id
-  );
-
-CREATE POLICY "Users can update their own module preferences"
-  ON user_form_module_preferences FOR UPDATE USING (
-    auth.uid() = user_id
-  );
-
--- Trigger functions and triggers
-
--- 1. Update updated_at BEFORE UPDATE triggers
-CREATE OR REPLACE FUNCTION set_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = timezone('utc', now());
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_form_data_updated_at
-  BEFORE UPDATE ON form_data
-  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
-CREATE TRIGGER update_form_data_photos_updated_at
-  BEFORE UPDATE ON form_data_photos
-  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
-CREATE TRIGGER update_form_list_updated_at
-  BEFORE UPDATE ON form_list
-  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
-CREATE TRIGGER update_module_list_updated_at
-  BEFORE UPDATE ON module_list
-  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
-CREATE TRIGGER update_profiles_updated_at
-  BEFORE UPDATE ON profiles
-  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
--- 2. AFTER INSERT trigger for profiles (placeholder logic)
-CREATE OR REPLACE FUNCTION after_profile_created_copy_flra_modules()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- TODO: Implement logic to copy FLRA modules for the new profile
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER after_profile_created_copy_flra_modules
-  AFTER INSERT ON profiles
-  FOR EACH ROW EXECUTE FUNCTION after_profile_created_copy_flra_modules(); 
+-- Non-unique indexes
+CREATE INDEX IF NOT EXISTS form_data_photos_form_id_idx ON form_data_photos(form_id);
+CREATE INDEX IF NOT EXISTS form_data_photos_is_deleted_idx ON form_data_photos(is_deleted);
+CREATE INDEX IF NOT EXISTS form_data_photos_sort_order_idx ON form_data_photos(sort_order);
+CREATE INDEX IF NOT EXISTS form_data_photos_tag_idx ON form_data_photos(tag);
+CREATE INDEX IF NOT EXISTS form_data_photos_uploaded_by_idx ON form_data_photos(uploaded_by);
+CREATE INDEX IF NOT EXISTS form_modules_completion_state_idx ON form_modules(completion_state);
+CREATE INDEX IF NOT EXISTS form_modules_form_id_idx ON form_modules(form_id);
+CREATE INDEX IF NOT EXISTS forms_created_at_idx ON forms(created_at);
+CREATE INDEX IF NOT EXISTS forms_created_by_idx ON forms(created_by);
+CREATE INDEX IF NOT EXISTS forms_status_idx ON forms(status);
+CREATE INDEX IF NOT EXISTS signatures_hash_idx ON signatures(signature_hash);
+CREATE INDEX IF NOT EXISTS signatures_is_deleted_idx ON signatures(is_deleted);
+CREATE INDEX IF NOT EXISTS user_form_module_preferences_user_id_idx ON user_form_module_preferences(user_id);

@@ -1,9 +1,10 @@
 // Shared FLRA form types for use in centralized state management
 
-export type FlraHeader = {
+export type FormInstance = {
   form_number?: string | null;
   form_name?: string | null;
   form_date?: string | null; // ISO date string
+  user_form_id?: string | null;
 };
 
 export type GeneralInformation = {
@@ -50,7 +51,7 @@ export type TaskHazardControl = {
   risk_level_after?: number | null;
 };
 
-export type FlraPhoto = {
+export type FormAssetPhoto = {
   // Required fields from Supabase schema
   id: string;
   form_id: string;
@@ -100,12 +101,12 @@ export type PpeEquipmentChecklist = {
 };
 
 export type FlraFormState = {
-  header: FlraHeader;
+  header: FormInstance;
   general: GeneralInformation;
   preJobChecklist: PreJobTaskChecklist;
   ppeChecklist: PpeEquipmentChecklist;
   taskHazards: TaskHazardControl[];
-  photos: FlraPhoto[];
+  photos: FormAssetPhoto[];
   signatures: Signature[];
   status?: "draft" | "submitted" | "archived";
 

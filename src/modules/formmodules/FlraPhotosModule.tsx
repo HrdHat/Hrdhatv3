@@ -1,17 +1,17 @@
 import React from "react";
-import { FlraPhoto } from "../../types/formTypes";
+import { FormAssetPhoto } from "../../types/formTypes";
 import { AddPhotosButton } from "../../components/shared/buttons/AddPhotosButton";
 import { FormPhoto } from "../../services/forms/uploadImageToFormModule";
 
 type Props = {
-  value: FlraPhoto[];
-  onChange: (photos: FlraPhoto[]) => void;
+  value: FormAssetPhoto[];
+  onChange: (photos: FormAssetPhoto[]) => void;
   formId: string;
   formModuleId: string;
   uploadedBy: string;
 };
 
-const FlraPhotosModule: React.FC<Props> = ({
+const FormAssetPhotosModule: React.FC<Props> = ({
   value,
   onChange,
   formId,
@@ -19,8 +19,8 @@ const FlraPhotosModule: React.FC<Props> = ({
   uploadedBy,
 }) => {
   const handleUploadSuccess = (photo: FormPhoto) => {
-    // Convert FormPhoto to FlraPhoto format, preserving all Supabase fields
-    const newPhoto: FlraPhoto = {
+    // Convert FormPhoto to FormAssetPhoto format, preserving all Supabase fields
+    const newPhoto: FormAssetPhoto = {
       id: photo.id,
       form_id: photo.form_id,
       form_module_id: photo.form_module_id,
@@ -54,7 +54,7 @@ const FlraPhotosModule: React.FC<Props> = ({
 
   return (
     <section>
-      <h2>FLRA Photos</h2>
+      <h2>Form Asset Photos</h2>
       <div>
         {/* Display existing photos */}
         {value.map((photo, idx) => (
@@ -94,4 +94,4 @@ const FlraPhotosModule: React.FC<Props> = ({
   );
 };
 
-export default FlraPhotosModule;
+export default FormAssetPhotosModule;

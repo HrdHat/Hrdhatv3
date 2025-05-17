@@ -13,20 +13,20 @@ interface ActiveFlraDrawerProps {
   onClose: () => void;
 }
 
-const ActiveFlraDrawer: React.FC<ActiveFlraDrawerProps> = ({ isOpen, onClose }) => {
-  const [flras, setFlras] = useState(DUMMY_FLRAS);
+const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({ isOpen, onClose }) => {
+  const [formInstances, setFormInstances] = useState(DUMMY_FLRAS);
   const [openFormId, setOpenFormId] = useState("1"); // Assume "1" is open
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [pendingSwitchId, setPendingSwitchId] = useState<string | null>(null);
 
   // Delete handler with confirmation
   const handleDelete = (id: string) => {
-    // console.log(`Prompting delete for FLRA id: ${id}`);
+    // console.log(`Prompting delete for Form Instance id: ${id}`);
     setPendingDeleteId(id);
   };
   const confirmDelete = () => {
-    // console.log(`Confirmed delete for FLRA id: ${pendingDeleteId}`);
-    setFlras(flras.filter(f => f.id !== pendingDeleteId));
+    // console.log(`Confirmed delete for Form Instance id: ${pendingDeleteId}`);
+    setFormInstances(formInstances.filter(f => f.id !== pendingDeleteId));
     setPendingDeleteId(null);
     // TODO: Call service to delete from DB
   };
@@ -37,18 +37,18 @@ const ActiveFlraDrawer: React.FC<ActiveFlraDrawerProps> = ({ isOpen, onClose }) 
 
   // Switch handler with confirmation if a form is already open
   const handleSwitch = (id: string) => {
-    // console.log(`Attempting to switch to FLRA id: ${id}`);
+    // console.log(`Attempting to switch to Form Instance id: ${id}`);
     if (openFormId && openFormId !== id) {
       // console.log('Prompting switch confirmation');
       setPendingSwitchId(id);
     } else {
-      // console.log(`Switched to FLRA id: ${id}`);
+      // console.log(`Switched to Form Instance id: ${id}`);
       setOpenFormId(id);
       // TODO: Save as active in DB/local storage
     }
   };
   const confirmSwitch = () => {
-    // console.log(`Confirmed switch to FLRA id: ${pendingSwitchId}`);
+    // console.log(`Confirmed switch to Form Instance id: ${pendingSwitchId}`);
     if (pendingSwitchId) {
       // TODO: Save current form as active in DB/local storage
       setOpenFormId(pendingSwitchId);
@@ -71,16 +71,16 @@ const ActiveFlraDrawer: React.FC<ActiveFlraDrawerProps> = ({ isOpen, onClose }) 
         <CloseDrawerButton onClick={onClose} />
       </div>
       <ul>
-        {flras.map(flra => (
-          <li key={flra.id}>
+        {formInstances.map(formInstance => (
+          <li key={formInstance.id}>
             <span>
-              {flra.name}
-              {flra.id === openFormId && " (Open)"}
+              {formInstance.name}
+              {formInstance.id === openFormId && " (Open)"}
             </span>
-            <button onClick={() => handleSwitch(flra.id)} disabled={flra.id === openFormId}>
-              {flra.id === openFormId ? "Active" : "Switch"}
+            <button onClick={() => handleSwitch(formInstance.id)} disabled={formInstance.id === openFormId}>
+              {formInstance.id === openFormId ? "Active" : "Switch"}
             </button>
-            <button onClick={() => handleDelete(flra.id)}>Delete</button>
+            <button onClick={() => handleDelete(formInstance.id)}>Delete</button>
           </li>
         ))}
       </ul>
@@ -108,4 +108,4 @@ const ActiveFlraDrawer: React.FC<ActiveFlraDrawerProps> = ({ isOpen, onClose }) 
   );
 };
 
-export default ActiveFlraDrawer; 
+export default ActiveFormInstanceDrawer; 

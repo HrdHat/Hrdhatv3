@@ -53,7 +53,7 @@ export async function saveFormModuleData({
   data,
   moduleId,
 }: SaveFormModuleDataParams): Promise<{ success: boolean; error?: string }> {
-  const table = tableMap[moduleKey] || 'form_data_generic';
+  const table = tableMap[moduleKey] || 'form_data_entries_generic';
   let payload: any;
 
   // Handle generic module fallback

@@ -1,13 +1,13 @@
-# FLRA Form State Management & Submission Plan
+# Form Instance State Management & Submission Plan
 
 ## New State (2024)
-- All form state is managed in React state in `FlraFormBuilder`.
+- All form state is managed in React state in `FormInstanceBuilder`.
 - Only one form is "open" at a time (tracked by `currentFormId`).
 - **All field changes are saved directly to Supabase immediately.**
 - No localStorage, no drafts, no debounce, no autosave.
 - When starting a new form, a new row is created in the `forms` table and a fresh `formId` is used for all subsequent saves.
 - Data is always persisted in Supabase; nothing is lost on reload/navigation.
-- `ActiveFlraDrawer` will fetch and manage active forms from Supabase.
+- `ActiveFormInstanceDrawer` will fetch and manage active forms from Supabase.
 
 ---
 
@@ -31,7 +31,7 @@
 
 ## Schema Field Requirements (from `schema.sql`)
 
-### FLRA Header
+### Form Instance
 | Field         | Type   | Required/Nullable |
 |-------------- |--------|------------------|
 | form_module_id| uuid   | Nullable         |
@@ -39,6 +39,7 @@
 | form_name     | text   | Nullable         |
 | form_date     | date   | Nullable         |
 | created_at    | timestamp | Required (auto) |
+| user_form_id  | text   | Nullable         |
 
 ### General Information
 | Field               | Type    | Required/Nullable |
@@ -95,7 +96,7 @@
 | risk_level_after  | integer | Nullable         |
 | created_at        | timestamp | Required (auto) |
 
-### FLRA Photos
+### Form Asset Photos
 | Field         | Type    | Required/Nullable |
 |---------------|---------|------------------|
 | form_id       | uuid    | Required         |

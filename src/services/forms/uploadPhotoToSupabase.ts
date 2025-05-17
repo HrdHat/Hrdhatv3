@@ -91,8 +91,8 @@ export async function uploadPhotoToSupabase({
     throw new Error("Failed to get signed URL for photo");
   }
 
-  // Save to form_data_photos table with all required metadata fields
-  const { error: dbError } = await supabase.from("form_data_photos").insert({
+  // Save to form_asset_photos table with all required metadata fields
+  const { error: dbError } = await supabase.from("form_asset_photos").insert({
     form_id: formId,
     form_module_id: moduleId,
     uploaded_by: uploadedBy,
