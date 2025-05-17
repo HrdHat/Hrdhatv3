@@ -51,7 +51,7 @@ export const useFlraFormData = (formId: string | null) => {
 
         // Fetch modules
         const { data: modules, error: modulesError } = await supabase
-          .from("form_modules")
+          .from("form_instance_modules")
           .select("*")
           .eq("form_id", formId)
           .order("module_order");
@@ -62,7 +62,7 @@ export const useFlraFormData = (formId: string | null) => {
         const modulesWithFields = await Promise.all(
           (modules as FormModule[]).map(async (module) => {
             const { data: fields, error: fieldsError } = await supabase
-              .from("form_module_fields")
+              .from("form_instance_module_fields")
               .select("*")
               .eq("form_module_id", module.id)
               .order("field_order");

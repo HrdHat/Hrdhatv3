@@ -46,17 +46,17 @@
 | form_list                    | is_enabled                                    | boolean                  | NO          | true                         |
 | form_list                    | created_at                                    | timestamp with time zone | NO          | timezone('utc'::text, now()) |
 | form_list                    | updated_at                                    | timestamp with time zone | NO          | timezone('utc'::text, now()) |
-| form_module_fields           | id                                            | uuid                     | NO          | uuid_generate_v4()           |
-| form_module_fields           | form_id                                       | uuid                     | NO          | null                         |
-| form_module_fields           | form_module_id                                | uuid                     | NO          | null                         |
-| form_module_fields           | module_field_id                               | uuid                     | YES         | null                         |
-| form_module_fields           | name                                          | text                     | NO          | null                         |
-| form_module_fields           | label                                         | text                     | NO          | null                         |
-| form_module_fields           | type                                          | text                     | NO          | null                         |
-| form_module_fields           | required                                      | boolean                  | NO          | false                        |
-| form_module_fields           | field_order                                   | integer                  | NO          | null                         |
-| form_module_fields           | default_value                                 | text                     | YES         | null                         |
-| form_module_fields           | version                                       | integer                  | NO          | 1                            |
+| form_instance_module_fields  | id                                            | uuid                     | NO          | uuid_generate_v4()           |
+| form_instance_module_fields  | form_id                                       | uuid                     | NO          | null                         |
+| form_instance_module_fields  | form_module_id                                | uuid                     | NO          | null                         |
+| form_instance_module_fields  | module_field_id                               | uuid                     | YES         | null                         |
+| form_instance_module_fields  | name                                          | text                     | NO          | null                         |
+| form_instance_module_fields  | label                                         | text                     | NO          | null                         |
+| form_instance_module_fields  | type                                          | text                     | NO          | null                         |
+| form_instance_module_fields  | required                                      | boolean                  | NO          | false                        |
+| form_instance_module_fields  | field_order                                   | integer                  | NO          | null                         |
+| form_instance_module_fields  | default_value                                 | text                     | YES         | null                         |
+| form_instance_module_fields  | version                                       | integer                  | NO          | 1                            |
 | form_modules                 | id                                            | uuid                     | NO          | uuid_generate_v4()           |
 | form_modules                 | form_id                                       | uuid                     | NO          | null                         |
 | form_modules                 | module_id                                     | uuid                     | NO          | null                         |

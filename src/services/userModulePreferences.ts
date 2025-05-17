@@ -43,7 +43,7 @@ export async function assignDefaultModulesToUser(userId: string, formName: strin
  * If no rows in user_form_module_preferences for user_id:
  *   → Load all module_list.id where is_default = true
  *   → Insert those as new preferences
- *   → Use them to create form_modules
+ *   → Use them to create form_instance_modules
  */
 
 /**

@@ -7,7 +7,7 @@ export interface CloneFieldsFromModuleParams {
 }
 
 /**
- * Clones all fields from module_fields (template) to form_module_fields (instance) for a given module.
+ * Clones all fields from module_fields (template) to form_instance_module_fields (instance) for a given module.
  * Logs warnings for any failed insert but continues processing all fields.
  * @param log - Set to false to suppress console logs (default: true)
  */
@@ -30,7 +30,7 @@ export async function cloneFieldsFromModule(
     return;
   }
 
-  // 2. Bulk insert all fields into form_module_fields
+  // 2. Bulk insert all fields into form_instance_module_fields
   const insertPayload = moduleFields.map((field: any) => ({
     form_id: formId,
     form_module_id: formModuleId,
@@ -45,7 +45,7 @@ export async function cloneFieldsFromModule(
   }));
 
   const { error: insertError } = await supabase
-    .from('form_module_fields')
+    .from('form_instance_module_fields')
     .insert(insertPayload);
 
   if (insertError) {

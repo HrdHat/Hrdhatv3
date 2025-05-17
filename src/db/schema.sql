@@ -69,21 +69,7 @@ CREATE TABLE IF NOT EXISTS form_list (
     updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
-CREATE TABLE IF NOT EXISTS form_module_fields (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    form_id uuid NOT NULL,
-    form_module_id uuid NOT NULL,
-    module_field_id uuid,
-    name text NOT NULL,
-    label text NOT NULL,
-    type text NOT NULL,
-    required boolean NOT NULL DEFAULT false,
-    field_order integer NOT NULL,
-    default_value text,
-    version integer NOT NULL DEFAULT 1
-);
-
-CREATE TABLE IF NOT EXISTS form_modules (
+CREATE TABLE IF NOT EXISTS form_instance_modules (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_id uuid NOT NULL,
     module_id uuid NOT NULL,
@@ -291,9 +277,9 @@ ALTER TABLE form_template_modules
     ADD CONSTRAINT fk_form_template_modules_form_list FOREIGN KEY (form_list_id) REFERENCES form_list(id),
     ADD CONSTRAINT fk_form_template_modules_module_list FOREIGN KEY (module_list_id) REFERENCES module_list(id);
 
-ALTER TABLE form_modules
-    ADD CONSTRAINT fk_form_modules_form_id_forms FOREIGN KEY (form_id) REFERENCES forms(id),
-    ADD CONSTRAINT fk_form_modules_module_id_modules FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE;
+ALTER TABLE form_instance_modules
+    ADD CONSTRAINT fk_form_instance_modules_form_id_forms FOREIGN KEY (form_id) REFERENCES forms(id),
+    ADD CONSTRAINT fk_form_instance_modules_module_id_modules FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE;
 
 ALTER TABLE user_form_module_preferences
     ADD CONSTRAINT fk_user_form_module_preferences_user_id FOREIGN KEY (user_id) REFERENCES profiles(id),
@@ -301,42 +287,42 @@ ALTER TABLE user_form_module_preferences
     ADD CONSTRAINT fk_user_form_module_preferences_module_list_id FOREIGN KEY (module_list_id) REFERENCES module_list(id);
 
 ALTER TABLE flra_header
-    ADD CONSTRAINT fk_flra_header_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id);
+    ADD CONSTRAINT fk_flra_header_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id);
 
 ALTER TABLE general_information
-    ADD CONSTRAINT fk_general_information_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id);
+    ADD CONSTRAINT fk_general_information_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id);
 
 ALTER TABLE pre_job_task_checklist
     ADD CONSTRAINT fk_pre_job_task_checklist_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
-    ADD CONSTRAINT fk_pre_job_task_checklist_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id);
+    ADD CONSTRAINT fk_pre_job_task_checklist_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id);
 
 ALTER TABLE task_hazard_control
     ADD CONSTRAINT fk_task_hazard_control_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
-    ADD CONSTRAINT fk_task_hazard_control_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id);
+    ADD CONSTRAINT fk_task_hazard_control_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id);
 
 ALTER TABLE flra_photos
     ADD CONSTRAINT fk_flra_photos_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
-    ADD CONSTRAINT fk_flra_photos_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id);
+    ADD CONSTRAINT fk_flra_photos_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id);
 
 ALTER TABLE signatures
     ADD CONSTRAINT fk_signatures_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
-    ADD CONSTRAINT fk_signatures_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id),
+    ADD CONSTRAINT fk_signatures_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id),
     ADD CONSTRAINT fk_signatures_signed_by_users FOREIGN KEY (signed_by) REFERENCES users(id);
 
 ALTER TABLE ppe_platform_inspection
     ADD CONSTRAINT fk_ppe_platform_inspection_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
-    ADD CONSTRAINT fk_ppe_platform_inspection_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id);
+    ADD CONSTRAINT fk_ppe_platform_inspection_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id);
 
 ALTER TABLE form_data
     ADD CONSTRAINT fk_form_data_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
-    ADD CONSTRAINT fk_form_data_module_id FOREIGN KEY (module_id) REFERENCES form_modules(id);
+    ADD CONSTRAINT fk_form_data_module_id FOREIGN KEY (module_id) REFERENCES form_instance_modules(id);
 
 ALTER TABLE projects
     ADD CONSTRAINT fk_projects_company_id FOREIGN KEY (company_id) REFERENCES companies(id);
 
 ALTER TABLE form_data_photos
     ADD CONSTRAINT fk_form_data_photos_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
-    ADD CONSTRAINT fk_form_data_photos_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id),
+    ADD CONSTRAINT fk_form_data_photos_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id),
     ADD CONSTRAINT fk_form_data_photos_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES profiles(id);
 
 ALTER TABLE modules
@@ -348,9 +334,13 @@ ALTER TABLE module_fields
     ADD CONSTRAINT fk_module_fields_company_id FOREIGN KEY (company_id) REFERENCES companies(id),
     ADD CONSTRAINT fk_module_fields_project_id FOREIGN KEY (project_id) REFERENCES projects(id);
 
+ALTER TABLE form_instance_modules
+    ADD CONSTRAINT fk_form_instance_modules_form_id_forms FOREIGN KEY (form_id) REFERENCES forms(id),
+    ADD CONSTRAINT fk_form_instance_modules_module_id_modules FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE;
+
 ALTER TABLE form_module_fields
     ADD CONSTRAINT fk_form_module_fields_form_id FOREIGN KEY (form_id) REFERENCES forms(id),
-    ADD CONSTRAINT fk_form_module_fields_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_modules(id),
+    ADD CONSTRAINT fk_form_module_fields_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id),
     ADD CONSTRAINT fk_form_module_fields_module_field_id FOREIGN KEY (module_field_id) REFERENCES module_fields(id);
 
 -- Indexes and Unique Constraints
@@ -376,8 +366,8 @@ CREATE INDEX IF NOT EXISTS form_data_photos_is_deleted_idx ON form_data_photos(i
 CREATE INDEX IF NOT EXISTS form_data_photos_sort_order_idx ON form_data_photos(sort_order);
 CREATE INDEX IF NOT EXISTS form_data_photos_tag_idx ON form_data_photos(tag);
 CREATE INDEX IF NOT EXISTS form_data_photos_uploaded_by_idx ON form_data_photos(uploaded_by);
-CREATE INDEX IF NOT EXISTS form_modules_completion_state_idx ON form_modules(completion_state);
-CREATE INDEX IF NOT EXISTS form_modules_form_id_idx ON form_modules(form_id);
+CREATE INDEX IF NOT EXISTS form_instance_modules_completion_state_idx ON form_instance_modules(completion_state);
+CREATE INDEX IF NOT EXISTS form_instance_modules_form_id_idx ON form_instance_modules(form_id);
 CREATE INDEX IF NOT EXISTS forms_created_at_idx ON forms(created_at);
 CREATE INDEX IF NOT EXISTS forms_created_by_idx ON forms(created_by);
 CREATE INDEX IF NOT EXISTS forms_status_idx ON forms(status);

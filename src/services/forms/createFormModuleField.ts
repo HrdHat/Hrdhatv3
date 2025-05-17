@@ -69,7 +69,7 @@ export async function createFormModuleField({
 
   // Check for uniqueness (form_module_id, name)
   const { data: existing, error: existingError } = await supabase
-    .from('form_module_fields')
+    .from('form_instance_module_fields')
     .select('id')
     .eq('form_module_id', formModuleId)
     .eq('name', name)
@@ -83,7 +83,7 @@ export async function createFormModuleField({
 
   // Insert new form module field
   const { data, error } = await supabase
-    .from('form_module_fields')
+    .from('form_instance_module_fields')
     .insert([
       {
         form_id: formId,

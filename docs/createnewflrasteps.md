@@ -4,13 +4,13 @@ Verify Authenticated Session
 Check that the user is logged in (COMPLETE)
 
 
-If not, show an error (e.g., “You must be logged in to create a form”) (COMPLETE)
+If not, show an error (e.g., "You must be logged in to create a form") (COMPLETE)
 
 Start Loading State (COMPLETE)
 
 Visually disable the button (COMPLETE)
 
-Optionally show a spinner or “Creating...” text (COMPLETE)
+Optionally show a spinner or "Creating..." text (COMPLETE)
 
 Call Form Creation Service (COMPLETE)
 
@@ -34,7 +34,7 @@ If error is returned:
 
 Log error for debugging
 
-Show user-friendly error message (e.g., “Form creation failed”)
+Show user-friendly error message (e.g., "Form creation failed")
 
 Stop loading state
 
@@ -46,11 +46,11 @@ Log critical error
 
 Stop loading state
 
-Show “Unexpected response from server”
+Show "Unexpected response from server"
 
 Navigate to New Form
 
-Redirect user to /flra/:formId using the new form’s ID
+Redirect user to /flra/:formId using the new form's ID
 
 Optional: store returned modules and fields in global context to avoid re-fetch
 
@@ -118,7 +118,7 @@ Create Form Module Fields  (COMPLETE)
 
 For each field definition: 
 
-Insert a row into form_module_fields with: 
+Insert a row into form_instance_module_fields with: 
 
 form_id, form_module_id, name, label, type, required, default_value, etc.
 

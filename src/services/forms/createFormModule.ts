@@ -67,7 +67,7 @@ export async function createFormModule({
       `[createFormModule] Creating form module for formId=${formId}, moduleId=${moduleId}, order=${moduleOrder}, isRequired=${isRequired}, completionState=${completionState}`
     );
     const { data, error } = await supabase
-      .from("form_modules")
+      .from("form_instance_modules")
       .insert([
         {
           form_id: formId,
