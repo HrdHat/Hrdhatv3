@@ -55,9 +55,9 @@ export async function uploadSignatureToSupabase({
     throw new Error("Failed to get signed URL for signature");
   }
 
-  // Save to signatures table with metadata
+  // Save to form_instance_signatures table with metadata
   const { data, error: dbError } = await supabase
-    .from("signatures")
+    .from("form_instance_signatures")
     .insert({
       form_id: formId,
       form_module_id: metadata.moduleId,

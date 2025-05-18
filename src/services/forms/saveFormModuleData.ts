@@ -12,11 +12,11 @@ import {
 const tableMap: Record<string, string> = {
   header: 'flra_header',
   general: 'form_instance_general_info',
-  preJobChecklist: 'pre_job_task_checklist',
+  preJobChecklist: 'form_instance_pre_job_checklist',
   ppeChecklist: 'form_instance_ppe_platform',
-  taskHazards: 'task_hazard_control',
+  taskHazards: 'form_instance_hazards',
   photos: 'flra_photos',
-  signatures: 'signatures',
+  signatures: 'form_instance_signatures',
 };
 
 // Supported module keys for typed tables

@@ -40,27 +40,9 @@ export async function createFormModule({
   error: SupabaseError | null;
 }> {
   try {
-    // 1. Verify module exists and is active
-    console.log(
-      `[createFormModule] Checking if module ${moduleId} exists and is active...`
-    );
-    const { data: module, error: moduleError } = await supabase
-      .from("module_list")
-      .select("id")
-      .eq("id", moduleId)
-      .eq("is_active", true)
-      .single();
-
-    if (moduleError || !module) {
-      console.error(
-        `[createFormModule] Module not found or inactive: ${moduleId}`,
-        moduleError
-      );
-      return {
-        formModule: null,
-        error: { message: "Module not found or inactive" },
-      };
-    }
+    // TODO: The 'module_list' table has been dropped. Update logic to use the new module source.
+    // This check is now non-functional and must be migrated to the new architecture.
+    // throw new Error("Module existence check is deprecated: 'module_list' table has been dropped. Update to new module source.");
 
     // 2. Create form module
     console.log(

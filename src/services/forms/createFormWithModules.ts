@@ -99,8 +99,8 @@ export async function createFormWithModules({
 
     // Fetch module metadata to check uses_fields and renderer_key
     const { data: moduleMeta, error: moduleMetaError } = await supabase
-      .from("modules")
-      .select("*")
+      .from("template_modules")
+      .select("id, name, label, renderer_key, uses_fields")
       .eq("id", moduleId)
       .single();
 

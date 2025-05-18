@@ -3,6 +3,7 @@ import { supabase } from '../db/supabaseClient';
 /**
  * Assigns all default modules to a user for a given form type (by form name, e.g. 'FLRA').
  * Inserts into user_form_module_preferences if not already present.
+ * Now uses template_module_id referencing template_modules.
  */
 export async function assignDefaultModulesToUser(userId: string, formName: string) {
   // 1. Get the form_templates id for the given form name
@@ -14,27 +15,37 @@ export async function assignDefaultModulesToUser(userId: string, formName: strin
   if (formTemplateError || !formTemplate) throw new Error('Could not find form_templates for ' + formName);
   const formTemplateId = formTemplate.id;
 
-  // 2. Get all default modules
+  // 2. Get all modules assigned to this template (preserving order and required flag)
   const { data: modules, error: modulesError } = await supabase
-    .from('module_list')
-    .select('id')
-    .eq('is_default', true)
-    .eq('is_active', true);
-  if (modulesError || !modules) throw new Error('Could not fetch default modules');
+    .from('form_template_modules')
+    .select('template_module_id, module_order, is_required')
+    .eq('form_list_id', formTemplateId)
+    .order('module_order', { ascending: true });
+  if (modulesError || !modules) throw new Error('Could not fetch template modules for this form template');
 
   // 3. Prepare preferences rows
-  const preferences = modules.map((mod, idx) => ({
+  const preferences = modules.map((m: { template_module_id: string; module_order: number; is_required: boolean }) => ({
     user_id: userId,
     form_list_id: formTemplateId,
-    module_list_id: mod.id,
-    module_order: idx,
-    is_required: true,
+    template_module_id: m.template_module_id,
+    module_order: m.module_order,
+    is_required: m.is_required,
   }));
+
+  // Deduplicate preferences before upsert
+  // This prevents unique constraint violations on (user_id, form_list_id, template_module_id)
+  const seen = new Set();
+  const uniquePrefs = preferences.filter((p: any) => {
+    const key = `${p.user_id}_${p.form_list_id}_${p.template_module_id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 
   // 4. Insert preferences (ignore duplicates)
   const { error: insertError } = await supabase
     .from('user_form_module_preferences')
-    .upsert(preferences, { onConflict: 'user_id,form_list_id,module_list_id' });
+    .upsert(uniquePrefs, { onConflict: 'user_id,form_list_id,template_module_id' });
   if (insertError) throw insertError;
 }
 
@@ -47,10 +58,10 @@ export async function assignDefaultModulesToUser(userId: string, formName: strin
  */
 
 /**
- * Ensures the user has module preferences for FLRA, and returns them.
- * If none exist, assigns the stock FLRA modules and returns those.
+ * Ensures the user has module preferences for FLRA, and returns them joined with template_modules.
+ * If none exist, assigns the stock template modules and returns those.
  * @param userId The user's UUID
- * @returns The user's module preferences for FLRA (ordered)
+ * @returns The user's module preferences for FLRA (ordered, joined with template_modules)
  */
 export async function getOrCreateFlraModulePreferences(userId: string) {
   // 1. Get the FLRA form_templates id
@@ -62,10 +73,10 @@ export async function getOrCreateFlraModulePreferences(userId: string) {
   if (formTemplateError || !formTemplate) throw new Error('FLRA form_templates not found');
   const flraFormTemplateId = formTemplate.id;
 
-  // 2. Query for existing preferences
+  // 2. Query for existing preferences (joined with template_modules)
   let { data: prefs, error: prefsError } = await supabase
     .from('user_form_module_preferences')
-    .select('*')
+    .select('*, template_modules:template_module_id(*)')
     .eq('user_id', userId)
     .eq('form_list_id', flraFormTemplateId)
     .order('module_order', { ascending: true });
@@ -78,7 +89,7 @@ export async function getOrCreateFlraModulePreferences(userId: string) {
     // Query again
     const { data: newPrefs, error: newPrefsError } = await supabase
       .from('user_form_module_preferences')
-      .select('*')
+      .select('*, template_modules:template_module_id(*)')
       .eq('user_id', userId)
       .eq('form_list_id', flraFormTemplateId)
       .order('module_order', { ascending: true });

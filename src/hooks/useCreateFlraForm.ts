@@ -46,9 +46,9 @@ export const useCreateFlraForm = () => {
     try {
       setLoading(true);
 
-      // 1. Get FLRA form_list id
+      // 1. Get FLRA form_templates id
       const { data: formList, error: formListError } = await supabase
-        .from("form_list")
+        .from("form_templates")
         .select("id")
         .eq("name", "FLRA")
         .single();
@@ -64,7 +64,7 @@ export const useCreateFlraForm = () => {
         console.error("No modules found for user after attempting to assign defaults");
         return { form: null, error: "No modules found for user" };
       }
-      const moduleIds = prefs.map((m: any) => m.module_list_id);
+      const moduleIds = prefs.map((m: any) => m.template_module_id);
 
       // 3. Create form with modules
       const result = await createFormWithModules({
