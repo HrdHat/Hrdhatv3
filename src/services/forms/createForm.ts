@@ -53,7 +53,7 @@ export async function createForm({
 
     // Insert new form
     const { data, error } = await supabase
-      .from("forms")
+      .from("form_instances")
       .insert([
         {
           user_id,

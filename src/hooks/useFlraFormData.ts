@@ -42,7 +42,7 @@ export const useFlraFormData = (formId: string | null) => {
 
         // Fetch form details
         const { data: form, error: formError } = await supabase
-          .from("forms")
+          .from("form_instances")
           .select("*")
           .eq("id", formId)
           .single();

@@ -7,7 +7,7 @@ export interface CloneFieldsFromModuleParams {
 }
 
 /**
- * Clones all fields from module_fields (template) to form_instance_module_fields (instance) for a given module.
+ * Clones all fields from template_module_fields (template) to form_instance_module_fields (instance) for a given module.
  * Logs warnings for any failed insert but continues processing all fields.
  * @param log - Set to false to suppress console logs (default: true)
  */
@@ -17,12 +17,12 @@ export async function cloneFieldsFromModule(
 ): Promise<void> {
   // 1. Fetch all fields for the module
   const { data: moduleFields, error: fetchError } = await supabase
-    .from('module_fields')
+    .from('template_module_fields')
     .select('*')
     .eq('module_id', moduleId);
 
   if (fetchError) {
-    if (log) console.warn('Failed to fetch module_fields:', fetchError.message);
+    if (log) console.warn('Failed to fetch template_module_fields:', fetchError.message);
     return;
   }
   if (!moduleFields || moduleFields.length === 0) {

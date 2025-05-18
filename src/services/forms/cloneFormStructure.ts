@@ -1,7 +1,7 @@
 import { supabase } from "../../db/supabaseClient";
 
 /**
- * Clones all fields from a module template (module_fields) into form_instance_module_fields for a new form_module instance.
+ * Clones all fields from a module template (template_module_fields) into form_instance_module_fields for a new form_module instance.
  * @param moduleId - The module_id from the modules table (template source)
  * @param formId - The form_id for the new form
  * @param formModuleId - The id of the new form_module instance
@@ -16,12 +16,12 @@ export async function cloneFieldsFromModule({
   formModuleId: string;
 }) {
   const { data: moduleFields, error } = await supabase
-    .from("module_fields")
+    .from("template_module_fields")
     .select("*")
     .eq("module_id", moduleId)
     .order("field_order");
 
-  if (error) throw new Error(`Error fetching module_fields: ${error.message}`);
+  if (error) throw new Error(`Error fetching template_module_fields: ${error.message}`);
 
   if (!moduleFields || moduleFields.length === 0) return; // Nothing to clone
 

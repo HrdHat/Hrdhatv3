@@ -1,19 +1,19 @@
 import { supabase } from '../../db/supabaseClient';
 import {
-  FlraHeader,
+  FormInstance,
   GeneralInformation,
   PreJobTaskChecklist,
   TaskHazardControl,
-  FlraPhoto,
+  FormAssetPhoto,
   Signature,
   PpeEquipmentChecklist,
 } from '../../types/formTypes';
 
 const tableMap: Record<string, string> = {
   header: 'flra_header',
-  general: 'general_information',
+  general: 'form_instance_general_info',
   preJobChecklist: 'pre_job_task_checklist',
-  ppeChecklist: 'ppe_platform_inspection',
+  ppeChecklist: 'form_instance_ppe_platform',
   taskHazards: 'task_hazard_control',
   photos: 'flra_photos',
   signatures: 'signatures',
@@ -31,12 +31,12 @@ export type ModuleKey =
 
 // Data type mapping for each module
 export type ModuleData =
-  | FlraHeader
+  | FormInstance
   | GeneralInformation
   | PreJobTaskChecklist
   | PpeEquipmentChecklist
   | TaskHazardControl[]
-  | FlraPhoto[]
+  | FormAssetPhoto[]
   | Signature[]
   | Record<string, any>; // fallback for generic
 

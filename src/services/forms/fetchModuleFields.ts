@@ -33,7 +33,7 @@ export async function fetchModuleFields(
     }
 
     const { data, error } = await supabase
-      .from("module_fields")
+      .from("template_module_fields")
       .select("*")
       .eq("module_id", moduleId)
       .order("field_order", { ascending: true });
