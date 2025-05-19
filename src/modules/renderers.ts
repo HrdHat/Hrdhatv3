@@ -1,13 +1,31 @@
-import TaskHazardModule from "@/modules/TaskHazardModule";
-import GenericModuleRenderer from "@/modules/GenericModuleRenderer";
+import TaskHazardModule from "./TaskHazardModule";
+import GenericModuleRenderer from "./GenericModuleRenderer";
+import FlraHeaderModule from "./formmodules/FlraHeaderModule";
+import FlraPhotosModule from "./formmodules/FlraPhotosModule";
+import SignaturesModule from "./formmodules/SignaturesModule";
+import SignatureModule from "./SignatureModule";
 
 // Define valid renderer keys as a type
-export type RendererKey = "TaskHazardModule" | "GenericModuleRenderer";
+export type RendererKey =
+  | "TaskHazardModule"
+  | "GenericModuleRenderer"
+  | "FlraHeaderModule"
+  | "PhotoModuleRenderer"
+  | "SignatureModuleRenderer"
+  | "SignatureModule"
+  | "FormInstanceModule"
+  | "task_hazard_control";
 
 // Registry of available renderers
 export const rendererRegistry: Record<RendererKey, React.ComponentType<any>> = {
-  TaskHazardModule,
-  GenericModuleRenderer,
+  "TaskHazardModule": TaskHazardModule,
+  "GenericModuleRenderer": GenericModuleRenderer,
+  "FlraHeaderModule": FlraHeaderModule,
+  "PhotoModuleRenderer": FlraPhotosModule,
+  "SignatureModuleRenderer": SignaturesModule,
+  "SignatureModule": SignatureModule,
+  "FormInstanceModule": FlraHeaderModule, // If FormInstanceModule is an alias for FlraHeaderModule
+  "task_hazard_control": TaskHazardModule,
 };
 
 // Helper to validate renderer key

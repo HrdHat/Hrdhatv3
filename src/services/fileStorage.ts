@@ -1,5 +1,4 @@
-import { supabase } from "../lib/supabase";
-import path from "path";
+import { supabase } from "../db/supabaseClient";
 import { v4 as uuidv4 } from "uuid";
 
 export const ALLOWED_MIME_TYPES = {
@@ -61,8 +60,8 @@ export class FileStorageService {
     file: File,
     mimeType: AllowedMimeType
   ): string {
-    // Use path.extname() for file extension safety
-    const ext = path.extname(file.name).toLowerCase();
+    // Use string operation for file extension
+    const ext = file.name.includes('.') ? `.${file.name.split('.').pop()?.toLowerCase()}` : '';
     if (
       ext &&
       Object.values(ALLOWED_MIME_TYPES).includes(
@@ -138,17 +137,16 @@ export class FileStorageService {
       }
 
       // Get signed URL
-      const {
-        data: { signedUrl },
-        error: urlError,
-      } = await supabase.storage
+      const urlResult = await supabase.storage
         .from(this.PHOTOS_BUCKET)
         .createSignedUrl(storagePath, 60 * 60 * 24 * 7); // 7 days
-
-      if (urlError) {
-        throw new Error(`Failed to generate signed URL: ${urlError.message}`);
+      const signedUrl = urlResult.data?.signedUrl;
+      if (urlResult.error) {
+        throw new Error(`Failed to generate signed URL: ${urlResult.error.message}`);
       }
-
+      if (!signedUrl) {
+        throw new Error(`Signed URL was not returned by Supabase.`);
+      }
       // Create a local preview URL for instant thumbnail display
       const previewUrl = URL.createObjectURL(file);
 
@@ -184,17 +182,16 @@ export class FileStorageService {
     storagePath: string,
     expiresIn = 60 * 60 * 24 * 7
   ): Promise<string> {
-    const {
-      data: { signedUrl },
-      error,
-    } = await supabase.storage
+    const urlResult = await supabase.storage
       .from(this.PHOTOS_BUCKET)
       .createSignedUrl(storagePath, expiresIn);
-
-    if (error) {
-      throw new Error(`Failed to generate signed URL: ${error.message}`);
+    const signedUrl = urlResult.data?.signedUrl;
+    if (urlResult.error) {
+      throw new Error(`Failed to generate signed URL: ${urlResult.error.message}`);
     }
-
+    if (!signedUrl) {
+      throw new Error(`Signed URL was not returned by Supabase.`);
+    }
     return signedUrl;
   }
 }
