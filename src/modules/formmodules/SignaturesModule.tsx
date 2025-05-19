@@ -1,7 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SignatureCanvas from "../../components/shared/SignatureCanvas";
 import { uploadSignatureToSupabase, SignatureMetadata } from "../../services/forms/uploadSignatureToSupabase";
 import { useAuth } from "../../session/AuthProvider";
+import { supabase } from "../../db/supabaseClient";
+
+// Helper to get storage path for a signature
+function getSignatureStoragePath(formId: string, signatureId: string) {
+  return `signatures/${formId}/${signatureId}.png`;
+}
 
 type Props = {
   value: SignatureMetadata[];
@@ -10,12 +16,34 @@ type Props = {
 };
 
 const SignaturesModule: React.FC<Props> = ({ value, onChange, formId }) => {
+  if (!value) return null;
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
-  // Check if current user has already signed
-  const alreadySigned = !!value.find(sig => sig.signed_by === user?.id);
+  // Check if current user has already signed (id is user id)
+  const alreadySigned = !!value.find(sig => sig.id === user?.id);
+
+  // Fetch signed URLs for all signatures
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchUrls() {
+      const urlMap: Record<string, string> = {};
+      for (const sig of value) {
+        const storagePath = getSignatureStoragePath(formId, sig.id);
+        const { data, error } = await supabase.storage
+          .from("signatures")
+          .createSignedUrl(storagePath, 3600);
+        if (data?.signedUrl && isMounted) {
+          urlMap[sig.id] = data.signedUrl;
+        }
+      }
+      if (isMounted) setSignedUrls(urlMap);
+    }
+    fetchUrls();
+    return () => { isMounted = false; };
+  }, [value, formId]);
 
   const handleSigned = async ({ name, blob }: { name: string; blob: Blob }) => {
     if (!user?.id) return;
@@ -24,12 +52,17 @@ const SignaturesModule: React.FC<Props> = ({ value, onChange, formId }) => {
     try {
       const meta = await uploadSignatureToSupabase({
         formId,
-        userId: user.id,
-        name,
+        metadata: {
+          id: user.id,
+          name,
+          role: user.user_metadata?.role || "",
+          timestamp: Date.now(),
+          formId,
+        },
         blob,
       });
       // Replace or add the user's signature in the list
-      const updated = value.filter(sig => sig.signed_by !== user.id).concat(meta);
+      const updated = value.filter(sig => sig.id !== user.id).concat(meta);
       onChange(updated);
     } catch (e: any) {
       setError(e.message || "Failed to save signature.");
@@ -55,20 +88,24 @@ const SignaturesModule: React.FC<Props> = ({ value, onChange, formId }) => {
         {value.length === 0 && <p>No signatures yet.</p>}
         {value
           .slice() // avoid mutating the original array
-          .sort((a, b) => new Date(b.signed_at).getTime() - new Date(a.signed_at).getTime())
+          .sort((a, b) => b.timestamp - a.timestamp)
           .map((sig) => (
-            <div key={sig.signed_by} style={{ marginBottom: 16 }}>
+            <div key={sig.id} style={{ marginBottom: 16 }}>
               <div>
                 <strong>{sig.name}</strong>
                 <span style={{ marginLeft: 8, color: "#888" }}>
-                  {new Date(sig.signed_at).toLocaleString()}
+                  {new Date(sig.timestamp).toLocaleString()}
                 </span>
               </div>
-              <img
-                src={sig.public_url}
-                alt={`Signature of ${sig.name}`}
-                style={{ border: "1px solid #ccc", background: "#fff", maxWidth: 300, maxHeight: 80 }}
-              />
+              {signedUrls[sig.id] ? (
+                <img
+                  src={signedUrls[sig.id]}
+                  alt={`Signature of ${sig.name}`}
+                  style={{ border: "1px solid #ccc", background: "#fff", maxWidth: 300, maxHeight: 80 }}
+                />
+              ) : (
+                <span>Loading image...</span>
+              )}
             </div>
           ))}
       </div>

@@ -19,7 +19,7 @@
 import React, { useState } from "react";
 import { ImageUploaderBase } from "../ImageUploaderBase";
 import { FormPhoto } from "../../../services/forms/uploadImageToFormModule";
-import "../../../styles/components/image-uploader.css";
+// import "../../../styles/components/image-uploader.css";
 
 export type AddPhotosButtonProps = {
   formId: string;

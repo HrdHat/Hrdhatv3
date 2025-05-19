@@ -22,7 +22,7 @@ import {
   FormPhoto,
 } from "../../services/forms/uploadImageToFormModule";
 import { supabase } from "../../db/supabaseClient";
-import "../styles/components/image-uploader.css";
+// import "../styles/components/image-uploader.css"; // commented out as per request
 
 export type ImageUploaderBaseProps = {
   formId: string;

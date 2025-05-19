@@ -18,6 +18,8 @@ const FormAssetPhotosModule: React.FC<Props> = ({
   formModuleId,
   uploadedBy,
 }) => {
+  if (!value) return null;
+
   const handleUploadSuccess = (photo: FormPhoto) => {
     // Convert FormPhoto to FormAssetPhoto format, preserving all Supabase fields
     const newPhoto: FormAssetPhoto = {

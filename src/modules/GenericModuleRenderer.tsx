@@ -12,13 +12,11 @@ interface Field {
 
 interface GenericModuleRendererProps {
   module: ModuleWithRenderer;
-  className?: string;
   onDataChange?: (values: Record<string, any>) => void;
 }
 
 export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
   module,
-  className = "",
   onDataChange,
 }) => {
   // Initialize state with default values
@@ -61,119 +59,140 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
       case "boolean":
       case "checkbox":
         return (
-          <input
-            type="checkbox"
-            name={field.name}
-            id={id}
-            checked={!!values[field.name]}
-            onChange={e => handleChange(field.name, e.target.checked)}
-            onBlur={() => handleBlur(field.name)}
-            required={isRequired}
-            aria-required={isRequired}
-            aria-invalid={isInvalid}
-            aria-describedby={isInvalid ? errorId : undefined}
-          />
+          <div>
+            <label htmlFor={id}>{field.label}</label>
+            <input
+              type="checkbox"
+              name={field.name}
+              id={id}
+              checked={!!values[field.name]}
+              onChange={e => handleChange(field.name, e.target.checked)}
+              onBlur={() => handleBlur(field.name)}
+              required={isRequired}
+              aria-required={isRequired}
+              aria-invalid={isInvalid}
+              aria-describedby={isInvalid ? errorId : undefined}
+            />
+          </div>
         );
       case "number":
         return (
-          <input
-            type="number"
-            name={field.name}
-            id={id}
-            value={values[field.name]}
-            onChange={e => handleChange(field.name, e.target.valueAsNumber)}
-            onBlur={() => handleBlur(field.name)}
-            required={isRequired}
-            aria-required={isRequired}
-            aria-invalid={isInvalid}
-            aria-describedby={isInvalid ? errorId : undefined}
-          />
+          <div>
+            <label htmlFor={id}>{field.label}</label>
+            <input
+              type="number"
+              name={field.name}
+              id={id}
+              value={values[field.name]}
+              onChange={e => handleChange(field.name, e.target.valueAsNumber)}
+              onBlur={() => handleBlur(field.name)}
+              required={isRequired}
+              aria-required={isRequired}
+              aria-invalid={isInvalid}
+              aria-describedby={isInvalid ? errorId : undefined}
+            />
+          </div>
         );
       case "date":
         return (
-          <input
-            type="date"
-            name={field.name}
-            id={id}
-            value={values[field.name]}
-            onChange={e => handleChange(field.name, e.target.value)}
-            onBlur={() => handleBlur(field.name)}
-            required={isRequired}
-            aria-required={isRequired}
-            aria-invalid={isInvalid}
-            aria-describedby={isInvalid ? errorId : undefined}
-          />
+          <div>
+            <label htmlFor={id}>{field.label}</label>
+            <input
+              type="date"
+              name={field.name}
+              id={id}
+              value={values[field.name]}
+              onChange={e => handleChange(field.name, e.target.value)}
+              onBlur={() => handleBlur(field.name)}
+              required={isRequired}
+              aria-required={isRequired}
+              aria-invalid={isInvalid}
+              aria-describedby={isInvalid ? errorId : undefined}
+            />
+          </div>
         );
       case "time":
         return (
-          <input
-            type="time"
-            name={field.name}
-            id={id}
-            value={values[field.name]}
-            onChange={e => handleChange(field.name, e.target.value)}
-            onBlur={() => handleBlur(field.name)}
-            required={isRequired}
-            aria-required={isRequired}
-            aria-invalid={isInvalid}
-            aria-describedby={isInvalid ? errorId : undefined}
-          />
+          <div>
+            <label htmlFor={id}>{field.label}</label>
+            <input
+              type="time"
+              name={field.name}
+              id={id}
+              value={values[field.name]}
+              onChange={e => handleChange(field.name, e.target.value)}
+              onBlur={() => handleBlur(field.name)}
+              required={isRequired}
+              aria-required={isRequired}
+              aria-invalid={isInvalid}
+              aria-describedby={isInvalid ? errorId : undefined}
+            />
+          </div>
         );
       case "textarea":
         return (
-          <textarea
-            name={field.name}
-            id={id}
-            value={values[field.name]}
-            onChange={e => handleChange(field.name, e.target.value)}
-            onBlur={() => handleBlur(field.name)}
-            required={isRequired}
-            aria-required={isRequired}
-            aria-invalid={isInvalid}
-            aria-describedby={isInvalid ? errorId : undefined}
-          />
+          <div>
+            <label htmlFor={id}>{field.label}</label>
+            <textarea
+              name={field.name}
+              id={id}
+              value={values[field.name]}
+              onChange={e => handleChange(field.name, e.target.value)}
+              onBlur={() => handleBlur(field.name)}
+              required={isRequired}
+              aria-required={isRequired}
+              aria-invalid={isInvalid}
+              aria-describedby={isInvalid ? errorId : undefined}
+            />
+          </div>
         );
       case "select":
         return (
-          <select
-            name={field.name}
-            id={id}
-            value={values[field.name]}
-            onChange={e => handleChange(field.name, e.target.value)}
-            onBlur={() => handleBlur(field.name)}
-            required={isRequired}
-            aria-required={isRequired}
-            aria-invalid={isInvalid}
-            aria-describedby={isInvalid ? errorId : undefined}
-          >
-            <option value="">Select...</option>
-            {(field.options || []).map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <div>
+            <label htmlFor={id}>{field.label}</label>
+            <select
+              name={field.name}
+              id={id}
+              value={values[field.name]}
+              onChange={e => handleChange(field.name, e.target.value)}
+              onBlur={() => handleBlur(field.name)}
+              required={isRequired}
+              aria-required={isRequired}
+              aria-invalid={isInvalid}
+              aria-describedby={isInvalid ? errorId : undefined}
+            >
+              <option value="">Select...</option>
+              {(field.options || []).map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
         );
       case "text":
         return (
-          <input
-            type="text"
-            name={field.name}
-            id={id}
-            value={values[field.name]}
-            onChange={e => handleChange(field.name, e.target.value)}
-            onBlur={() => handleBlur(field.name)}
-            required={isRequired}
-            aria-required={isRequired}
-            aria-invalid={isInvalid}
-            aria-describedby={isInvalid ? errorId : undefined}
-          />
+          <div>
+            <label htmlFor={id}>{field.label}</label>
+            <input
+              type="text"
+              name={field.name}
+              id={id}
+              value={values[field.name]}
+              onChange={e => handleChange(field.name, e.target.value)}
+              onBlur={() => handleBlur(field.name)}
+              required={isRequired}
+              aria-required={isRequired}
+              aria-invalid={isInvalid}
+              aria-describedby={isInvalid ? errorId : undefined}
+            />
+          </div>
         );
       // No file case here
       default:
         console.warn("Unknown field type:", normalizedType, field);
         return (
-          <div style={{ color: "red" }}>
+          <div>
             Unsupported field type: {normalizedType}
           </div>
         );
