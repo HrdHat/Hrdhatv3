@@ -22,6 +22,7 @@ import {
   FormPhoto,
 } from "../../services/forms/uploadImageToFormModule";
 import { supabase } from "../../db/supabaseClient";
+import { TABLES, FORM_ASSET_PHOTOS } from "../../constants/database";
 // import "../styles/components/image-uploader.css"; // commented out as per request
 
 export type ImageUploaderBaseProps = {
@@ -174,12 +175,12 @@ export const ImageUploaderBase: React.FC<ImageUploaderBaseProps> = ({
       try {
         // Attempt soft delete in database
         const { error } = await supabase
-          .from("form_data_photos")
+          .from(TABLES.formAssetPhotos)
           .update({
-            is_deleted: true,
-            deleted_at: new Date().toISOString(),
+            [FORM_ASSET_PHOTOS.isDeleted]: true,
+            [FORM_ASSET_PHOTOS.deletedAt]: new Date().toISOString(),
           })
-          .eq("id", photoToRemove.id);
+          .eq(FORM_ASSET_PHOTOS.id, photoToRemove.id);
 
         if (error) throw error;
 

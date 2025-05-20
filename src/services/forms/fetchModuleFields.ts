@@ -1,4 +1,5 @@
 import { supabase } from "../../db/supabaseClient";
+import { TABLES, TEMPLATE_MODULE_FIELDS } from "../../constants/database";
 
 export interface ModuleField {
   id: string;
@@ -33,10 +34,10 @@ export async function fetchModuleFields(
     }
 
     const { data, error } = await supabase
-      .from("template_module_fields")
+      .from(TABLES.templateModuleFields)
       .select("*")
-      .eq("module_id", moduleId)
-      .order("field_order", { ascending: true });
+      .eq(TEMPLATE_MODULE_FIELDS.moduleId, moduleId)
+      .order(TEMPLATE_MODULE_FIELDS.fieldOrder, { ascending: true });
 
     if (error) {
       if (import.meta.env.DEV) {

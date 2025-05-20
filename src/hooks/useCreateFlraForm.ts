@@ -4,6 +4,11 @@ import { useAuth } from "../session/AuthProvider";
 import { createFormWithModules } from "../services/forms/createFormWithModules";
 import { getOrCreateFlraModulePreferences } from "../services/userModulePreferences";
 import { supabase } from "../db/supabaseClient";
+import {
+  TABLES,
+  FORM_TEMPLATES,
+  FORM_INSTANCE_FIELDS,
+} from "../constants/database";
 
 interface CreateFlraFormOptions {
   title?: string;
@@ -48,9 +53,9 @@ export const useCreateFlraForm = () => {
 
       // 1. Get FLRA form_templates id
       const { data: formList, error: formListError } = await supabase
-        .from("form_templates")
-        .select("id")
-        .eq("name", "FLRA")
+        .from(TABLES.formTemplates)
+        .select(FORM_TEMPLATES.id)
+        .eq(FORM_TEMPLATES.name, "FLRA")
         .single();
 
       if (formListError || !formList) {
@@ -61,13 +66,16 @@ export const useCreateFlraForm = () => {
       // 2. Get or create user's preferred modules (ensures stock modules if none)
       const prefs = await getOrCreateFlraModulePreferences(user.id);
       if (!prefs || prefs.length === 0) {
-        console.error("No modules found for user after attempting to assign defaults");
+        console.error(
+          "No modules found for user after attempting to assign defaults"
+        );
         return { form: null, error: "No modules found for user" };
       }
       const moduleIds = prefs.map((m: any) => m.template_module_id);
 
       // 3. Create form with modules
       const result = await createFormWithModules({
+        userId: user.id,
         companyId: user.user_metadata?.company_id,
         title,
         description,

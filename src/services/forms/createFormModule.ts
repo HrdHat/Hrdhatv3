@@ -1,4 +1,5 @@
 import { supabase } from "../../db/supabaseClient";
+import { TABLES, FORM_INSTANCE_MODULES } from "../../constants/database";
 
 export type CompletionState =
   | "not_started"
@@ -11,7 +12,7 @@ export interface CreateFormModuleInput {
   moduleId: string;
   moduleOrder: number;
   isRequired?: boolean;
-  completionState?: CompletionState;
+  completionState?: string;
 }
 
 export interface FormModule {
@@ -20,7 +21,7 @@ export interface FormModule {
   module_id: string;
   module_order: number;
   is_required: boolean;
-  completion_state: CompletionState;
+  completion_state: string;
   created_at: string;
 }
 
@@ -49,14 +50,14 @@ export async function createFormModule({
       `[createFormModule] Creating form module for formId=${formId}, moduleId=${moduleId}, order=${moduleOrder}, isRequired=${isRequired}, completionState=${completionState}`
     );
     const { data, error } = await supabase
-      .from("form_instance_modules")
+      .from(TABLES.formInstanceModules)
       .insert([
         {
-          form_id: formId,
-          module_id: moduleId,
-          module_order: moduleOrder,
-          is_required: isRequired,
-          completion_state: completionState,
+          [FORM_INSTANCE_MODULES.formId]: formId,
+          [FORM_INSTANCE_MODULES.moduleId]: moduleId,
+          [FORM_INSTANCE_MODULES.moduleOrder]: moduleOrder,
+          [FORM_INSTANCE_MODULES.isRequired]: isRequired,
+          [FORM_INSTANCE_MODULES.completionState]: completionState,
         },
       ])
       .select()

@@ -1,7 +1,7 @@
 import React from "react";
 import { FormAssetPhoto } from "../../types/formTypes";
 import { AddPhotosButton } from "../../components/shared/buttons/AddPhotosButton";
-import { FormPhoto } from "../../services/forms/uploadImageToFormModule";
+import { uploadImageToFormModule } from "../../services/forms/uploadImageToFormModule";
 
 type Props = {
   value: FormAssetPhoto[];
@@ -22,29 +22,15 @@ const FormAssetPhotosModule: React.FC<Props> = ({
 }) => {
   if (!value) return null;
 
-  const handleUploadSuccess = (photo: FormPhoto) => {
-    // Convert FormPhoto to FormAssetPhoto format, preserving all Supabase fields
-    const newPhoto: FormAssetPhoto = {
-      id: photo.id,
-      form_id: photo.form_id,
-      form_module_id: photo.form_module_id,
-      storage_path: photo.storage_path,
-      public_url: photo.public_url,
-      file_name: photo.file_name,
-      file_size: photo.file_size,
-      mime_type: photo.mime_type,
-      description: photo.description || null,
-      tag: photo.tag || null,
-      source: photo.source,
-      uploaded_by: photo.uploaded_by,
-      uploaded_at: photo.uploaded_at,
-      updated_at: photo.updated_at,
-      is_deleted: photo.is_deleted,
-      deleted_at: photo.deleted_at || null,
-      // Optional fields not in FormPhoto
-      sort_order: null,
-    };
-    onChange([...value, newPhoto]);
+  const handleUploadSuccess = (result: {
+    data: FormAssetPhoto | null;
+    error: Error | null;
+  }) => {
+    if (result.error || !result.data) {
+      console.error("Photo upload failed:", result.error);
+      return;
+    }
+    onChange([...value, result.data]);
   };
 
   const handleUploadError = (error: Error) => {
@@ -57,44 +43,32 @@ const FormAssetPhotosModule: React.FC<Props> = ({
   };
 
   return (
-    <section className={`module-wrapper layout-${layoutStyle}`}>
-      <h2>Form Asset Photos</h2>
-      <div>
-        {/* Display existing photos */}
+    <div className={`space-y-4 ${layoutStyle === "tight" ? "p-2" : "p-4"}`}>
+      <div className="flex flex-wrap gap-2">
         {value.map((photo, idx) => (
-          <div key={photo.id || idx} className="image-uploader__thumbnail">
-            {photo.public_url && (
-              <img
-                src={photo.public_url}
-                alt={photo.description || "Uploaded image"}
-                className="image-uploader__thumbnail-image"
-              />
-            )}
-            <div className="image-uploader__thumbnail-overlay">
-              {photo.description || "No description"}
-            </div>
+          <div key={photo.id} className="relative group">
+            <img
+              src={photo.photo_url}
+              alt={photo.description || "Form photo"}
+              className="w-24 h-24 object-cover rounded-lg"
+            />
             <button
               onClick={() => removePhoto(idx)}
-              className="image-uploader__button--delete"
-              disabled={value.length === 1}
+              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               ×
             </button>
           </div>
         ))}
-
-        {/* Add Photos Button */}
-        <AddPhotosButton
-          formId={formId}
-          formModuleId={formModuleId}
-          uploadedBy={uploadedBy}
-          maxPhotos={10}
-          onUploadSuccess={handleUploadSuccess}
-          onUploadError={handleUploadError}
-          buttonText="Add Photos"
-        />
       </div>
-    </section>
+      <AddPhotosButton
+        onUploadSuccess={handleUploadSuccess}
+        onUploadError={handleUploadError}
+        formId={formId}
+        formModuleId={formModuleId}
+        uploadedBy={uploadedBy}
+      />
+    </div>
   );
 };
 

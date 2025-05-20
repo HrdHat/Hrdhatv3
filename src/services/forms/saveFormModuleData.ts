@@ -1,4 +1,4 @@
-import { supabase } from '../../db/supabaseClient';
+import { supabase } from "../../db/supabaseClient";
 import {
   FormInstance,
   GeneralInformation,
@@ -7,27 +7,18 @@ import {
   FormAssetPhoto,
   Signature,
   PpeEquipmentChecklist,
-} from '../../types/formTypes';
-
-const tableMap: Record<string, string> = {
-  header: 'flra_header',
-  general: 'form_instance_general_info',
-  preJobChecklist: 'form_instance_pre_job_checklist',
-  ppeChecklist: 'form_instance_ppe_platform',
-  taskHazards: 'form_instance_hazards',
-  photos: 'flra_photos',
-  signatures: 'form_instance_signatures',
-};
+} from "../../types/formTypes";
+import { TABLES, FORM_DATA_ENTRIES } from "../../constants/database";
 
 // Supported module keys for typed tables
 export type ModuleKey =
-  | 'header'
-  | 'general'
-  | 'preJobChecklist'
-  | 'ppeChecklist'
-  | 'taskHazards'
-  | 'photos'
-  | 'signatures';
+  | "header"
+  | "general"
+  | "preJobChecklist"
+  | "ppeChecklist"
+  | "taskHazards"
+  | "photos"
+  | "signatures";
 
 // Data type mapping for each module
 export type ModuleData =
@@ -37,15 +28,25 @@ export type ModuleData =
   | PpeEquipmentChecklist
   | TaskHazardControl[]
   | FormAssetPhoto[]
-  | Signature[]
-  | Record<string, any>; // fallback for generic
+  | Signature[];
 
 interface SaveFormModuleDataParams {
   formId: string;
-  moduleKey: ModuleKey | string;
+  moduleKey: ModuleKey;
   data: ModuleData;
-  moduleId?: string; // required for generic modules
+  moduleId?: string;
 }
+
+// Map module keys to their corresponding tables
+const tableMap: Record<ModuleKey, string> = {
+  header: TABLES.formInstances,
+  general: TABLES.formInstanceGeneralInfo,
+  preJobChecklist: TABLES.formInstancePreJobChecklist,
+  ppeChecklist: TABLES.formInstancePpePlatform,
+  taskHazards: TABLES.formInstanceHazards,
+  photos: TABLES.formAssetPhotos,
+  signatures: TABLES.formInstanceSignatures,
+};
 
 export async function saveFormModuleData({
   formId,
@@ -53,42 +54,57 @@ export async function saveFormModuleData({
   data,
   moduleId,
 }: SaveFormModuleDataParams): Promise<{ success: boolean; error?: string }> {
-  const table = tableMap[moduleKey] || 'form_data_entries_generic';
+  const table = tableMap[moduleKey] || TABLES.formDataEntries;
   let payload: any;
 
   // Handle generic module fallback
   if (!tableMap[moduleKey]) {
     if (!moduleId) {
-      return { success: false, error: 'moduleId required for generic module' };
+      return { success: false, error: "moduleId required for generic module" };
     }
     payload = {
-      form_id: formId,
-      module_id: moduleId,
-      data,
+      [FORM_DATA_ENTRIES.formId]: formId,
+      [FORM_DATA_ENTRIES.moduleId]: moduleId,
+      [FORM_DATA_ENTRIES.data]: data,
     };
     const { error } = await supabase.from(table).upsert(payload);
     if (import.meta.env.DEV) {
-      console.debug(`[saveFormModuleData] Saved to ${table}`, { formId, moduleKey, payload });
+      console.debug(`[saveFormModuleData] Saved to ${table}`, {
+        formId,
+        moduleKey,
+        payload,
+      });
     }
     return { success: !error, error: error?.message };
   }
 
   // Handle array (bulk) upserts
   if (Array.isArray(data)) {
-    const { error } = await supabase.from(table).upsert(
-      data.map(row => ({ ...row, form_id: formId }))
-    );
+    const { error } = await supabase
+      .from(table)
+      .upsert(
+        data.map((row) => ({ ...row, [FORM_DATA_ENTRIES.formId]: formId }))
+      );
     if (import.meta.env.DEV) {
-      console.debug(`[saveFormModuleData] Bulk upsert to ${table}`, { formId, moduleKey, data });
+      console.debug(`[saveFormModuleData] Bulk upsert to ${table}`, {
+        formId,
+        moduleKey,
+        data,
+      });
     }
     return { success: !error, error: error?.message };
   }
 
-  // Handle single-object upserts
-  payload = { ...data, form_id: formId };
-  const { error } = await supabase.from(table).upsert(payload);
+  // Handle single object upsert
+  const { error } = await supabase
+    .from(table)
+    .upsert({ ...data, [FORM_DATA_ENTRIES.formId]: formId });
   if (import.meta.env.DEV) {
-    console.debug(`[saveFormModuleData] Saved to ${table}`, { formId, moduleKey, payload });
+    console.debug(`[saveFormModuleData] Single upsert to ${table}`, {
+      formId,
+      moduleKey,
+      data,
+    });
   }
   return { success: !error, error: error?.message };
-} 
+}

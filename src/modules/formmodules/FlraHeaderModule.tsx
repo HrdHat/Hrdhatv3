@@ -9,6 +9,7 @@ import {
   generateFormNumber,
   isUserFormIdTaken,
 } from "../../utils/formNumberGenerator";
+import { TABLES } from "../../constants/database";
 import toast from "react-hot-toast";
 
 // Utility function to validate ISO date strings
@@ -32,9 +33,9 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
   layoutStyle = "default",
 }) => {
   const [instance, setInstance] = useState<FormInstance>({
-    form_number: "", // Will be set during initialization
+    form_number: null, // Initialize as null to match database schema
     user_form_id: null,
-    form_name: null,
+    title: null,
     form_date: new Date().toISOString().slice(0, 10), // Default to today
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -49,11 +50,33 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
         // Optimistic update
         setInstance(updatedInstance);
 
-        const { error } = await supabase.from("form_instances").upsert({
+        console.log("Supabase Query:", {
+          table: TABLES.formInstances,
+          operation: "upsert",
+          data: {
+            form_module_id: formModuleId,
+            form_number: updatedInstance.form_number,
+            user_form_id: updatedInstance.user_form_id,
+            title: updatedInstance.title,
+            form_date: updatedInstance.form_date,
+          },
+          fullQuery: {
+            from: TABLES.formInstances,
+            upsert: {
+              form_module_id: formModuleId,
+              form_number: updatedInstance.form_number,
+              user_form_id: updatedInstance.user_form_id,
+              title: updatedInstance.title,
+              form_date: updatedInstance.form_date,
+            },
+          },
+        });
+
+        const { error } = await supabase.from(TABLES.formInstances).upsert({
           form_module_id: formModuleId,
           form_number: updatedInstance.form_number,
           user_form_id: updatedInstance.user_form_id,
-          form_name: updatedInstance.form_name,
+          title: updatedInstance.title,
           form_date: updatedInstance.form_date,
         });
 
@@ -81,8 +104,20 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
     const init = async () => {
       setIsLoading(true);
       try {
+        console.log("Supabase Query:", {
+          table: TABLES.formInstances,
+          operation: "select",
+          filters: { form_module_id: formModuleId },
+          fullQuery: {
+            from: TABLES.formInstances,
+            select: "*",
+            eq: { form_module_id: formModuleId },
+            single: true,
+          },
+        });
+
         const { data, error } = await supabase
-          .from("form_instances")
+          .from(TABLES.formInstances)
           .select("*")
           .eq("form_module_id", formModuleId)
           .single();
@@ -91,7 +126,7 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
           setInstance({
             form_number: data.form_number,
             user_form_id: data.user_form_id,
-            form_name: data.form_name,
+            title: data.title,
             form_date: data.form_date,
           });
         } else if (error?.code === "PGRST116") {
@@ -100,7 +135,7 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
           const newInstance = {
             form_number: formNumber,
             user_form_id: null,
-            form_name: null,
+            title: null,
             form_date: new Date().toISOString().slice(0, 10),
           };
           await saveInstanceData(newInstance);
@@ -152,7 +187,9 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
             <input
               type="text"
               value={
-                isGeneratingNumber ? "Generating..." : instance.form_number
+                isGeneratingNumber
+                  ? "Generating..."
+                  : instance.form_number ?? ""
               }
               readOnly
               className="readonly"
@@ -179,9 +216,9 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
             Form Name:
             <input
               type="text"
-              value={instance.form_name || ""}
+              value={String(instance.title ?? "")}
               onChange={(e) =>
-                debouncedSave({ ...instance, form_name: e.target.value })
+                debouncedSave({ ...instance, title: e.target.value })
               }
               required
               disabled={isGeneratingNumber || isSaving}

@@ -100,9 +100,9 @@ if (module.name === 'task_hazard_control')
 For each module row in the DB, verify:
 
 - [x] Correct renderer is selected from `renderer_key`
-- [ ] `layout_style` is passed and applied visually
-- [ ] Generic modules render fields from DB
-- [ ] Special modules (`photos`, `signatures`, `task_hazard`) still function
+- [x] `layout_style` is passed and applied visually
+- [x] Generic modules render fields from DB
+- [x] Special modules (`photos`, `signatures`, `task_hazard`) still function
 
 ---
 

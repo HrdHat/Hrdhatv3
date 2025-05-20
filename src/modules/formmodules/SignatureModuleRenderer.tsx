@@ -6,6 +6,7 @@ import {
 } from "../../services/forms/uploadSignatureToSupabase";
 import { useAuth } from "../../session/AuthProvider";
 import { supabase } from "../../db/supabaseClient";
+import { STORAGE_BUCKETS } from "../../constants/storage";
 
 // Helper to get storage path for a signature
 function getSignatureStoragePath(formId: string, signatureId: string) {
@@ -44,7 +45,7 @@ const SignaturesModule: React.FC<Props> = ({
       for (const sig of value) {
         const storagePath = getSignatureStoragePath(formId, sig.id);
         const { data, error } = await supabase.storage
-          .from("signatures")
+          .from(STORAGE_BUCKETS.signatures)
           .createSignedUrl(storagePath, 3600);
         if (data?.signedUrl && isMounted) {
           urlMap[sig.id] = data.signedUrl;

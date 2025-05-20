@@ -8,13 +8,23 @@ const DUMMY_FLRAS = [
   { id: "3", name: "FLRA #3", isActive: false },
 ];
 
+interface FormInstance {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
 interface ActiveFlraDrawerProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({ isOpen, onClose }) => {
-  const [formInstances, setFormInstances] = useState(DUMMY_FLRAS);
+const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({
+  isOpen,
+  onClose,
+}) => {
+  const [formInstances, setFormInstances] =
+    useState<FormInstance[]>(DUMMY_FLRAS);
   const [openFormId, setOpenFormId] = useState("1"); // Assume "1" is open
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [pendingSwitchId, setPendingSwitchId] = useState<string | null>(null);
@@ -26,7 +36,7 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({ isOpen, onC
   };
   const confirmDelete = () => {
     // console.log(`Confirmed delete for Form Instance id: ${pendingDeleteId}`);
-    setFormInstances(formInstances.filter(f => f.id !== pendingDeleteId));
+    setFormInstances(formInstances.filter((f) => f.id !== pendingDeleteId));
     setPendingDeleteId(null);
     // TODO: Call service to delete from DB
   };
@@ -71,16 +81,21 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({ isOpen, onC
         <CloseDrawerButton onClick={onClose} />
       </div>
       <ul>
-        {formInstances.map(formInstance => (
+        {formInstances.map((formInstance) => (
           <li key={formInstance.id}>
             <span>
               {formInstance.name}
               {formInstance.id === openFormId && " (Open)"}
             </span>
-            <button onClick={() => handleSwitch(formInstance.id)} disabled={formInstance.id === openFormId}>
+            <button
+              onClick={() => handleSwitch(formInstance.id)}
+              disabled={formInstance.id === openFormId}
+            >
               {formInstance.id === openFormId ? "Active" : "Switch"}
             </button>
-            <button onClick={() => handleDelete(formInstance.id)}>Delete</button>
+            <button onClick={() => handleDelete(formInstance.id)}>
+              Delete
+            </button>
           </li>
         ))}
       </ul>
@@ -98,7 +113,8 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({ isOpen, onC
       {pendingSwitchId && (
         <div>
           <p>
-            You have a form already open. Do you want to switch? (Current form will be saved as active.)
+            You have a form already open. Do you want to switch? (Current form
+            will be saved as active.)
           </p>
           <button onClick={confirmSwitch}>Yes, Switch</button>
           <button onClick={cancelSwitch}>Cancel</button>
@@ -108,4 +124,4 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({ isOpen, onC
   );
 };
 
-export default ActiveFormInstanceDrawer; 
+export default ActiveFormInstanceDrawer;

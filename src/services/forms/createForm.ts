@@ -1,24 +1,25 @@
 import { supabase } from "../../db/supabaseClient";
-
-export interface CreateFormInput {
-  user_id?: string;
-  status?: "draft" | "submitted" | "archived";
-  company_id?: string;
-  project_id?: string;
-  title?: string;
-  description?: string;
-}
+import { TABLES, FORM_INSTANCE_FIELDS } from "../../constants/database";
 
 export interface FlraForm {
   id: string;
-  user_id: string;
-  company_id?: string;
-  project_id?: string;
+  userId: string;
+  companyId?: string;
+  projectId?: string;
   title?: string;
   description?: string;
   status: "draft" | "submitted" | "archived";
-  created_at: string;
-  submitted_at?: string | null;
+  createdAt: string;
+  submittedAt?: string | null;
+}
+
+export interface CreateFormInput {
+  userId?: string;
+  status?: "draft" | "submitted" | "archived";
+  companyId?: string;
+  projectId?: string;
+  title?: string;
+  description?: string;
 }
 
 export interface SupabaseError {
@@ -26,11 +27,23 @@ export interface SupabaseError {
   details?: string;
 }
 
+/**
+ * Validates that a field exists in the FlraForm type
+ */
+function validateFormField(field: keyof typeof FORM_INSTANCE_FIELDS): void {
+  const formFields = Object.keys(FORM_INSTANCE_FIELDS);
+  if (!formFields.includes(field)) {
+    throw new Error(
+      `Invalid form field: ${field}. Valid fields are: ${formFields.join(", ")}`
+    );
+  }
+}
+
 export async function createForm({
-  user_id,
+  userId,
   status = "draft",
-  company_id,
-  project_id,
+  companyId,
+  projectId,
   title,
   description,
 }: CreateFormInput): Promise<{
@@ -38,8 +51,21 @@ export async function createForm({
   error: SupabaseError | null;
 }> {
   try {
-    // Get authenticated user if user_id not provided
-    if (!user_id) {
+    // Validate all fields before database operations
+    validateFormField("userId");
+    validateFormField("companyId");
+    validateFormField("projectId");
+    validateFormField("title");
+    validateFormField("description");
+    validateFormField("status");
+    validateFormField("submittedAt");
+
+    // Get authenticated user if userId not provided
+    if (!userId) {
+      console.log("Supabase Query:", {
+        operation: "auth.getUser",
+        fullQuery: { auth: { getUser: true } },
+      });
       const { data: userData, error: userError } =
         await supabase.auth.getUser();
       if (userError || !userData?.user) {
@@ -48,21 +74,52 @@ export async function createForm({
           error: { message: "User not authenticated" },
         };
       }
-      user_id = userData.user.id;
+      userId = userData.user.id;
     }
 
     // Insert new form
+    console.log("Supabase Query:", {
+      table: TABLES.formInstances,
+      operation: "insert",
+      data: {
+        [FORM_INSTANCE_FIELDS.userId]: userId,
+        [FORM_INSTANCE_FIELDS.companyId]: companyId,
+        [FORM_INSTANCE_FIELDS.projectId]: projectId,
+        [FORM_INSTANCE_FIELDS.title]: title,
+        [FORM_INSTANCE_FIELDS.description]: description,
+        [FORM_INSTANCE_FIELDS.status]: status,
+        [FORM_INSTANCE_FIELDS.submittedAt]:
+          status === "submitted" ? new Date().toISOString() : null,
+      },
+      fullQuery: {
+        from: TABLES.formInstances,
+        insert: [
+          {
+            [FORM_INSTANCE_FIELDS.userId]: userId,
+            [FORM_INSTANCE_FIELDS.companyId]: companyId,
+            [FORM_INSTANCE_FIELDS.projectId]: projectId,
+            [FORM_INSTANCE_FIELDS.title]: title,
+            [FORM_INSTANCE_FIELDS.description]: description,
+            [FORM_INSTANCE_FIELDS.status]: status,
+            [FORM_INSTANCE_FIELDS.submittedAt]:
+              status === "submitted" ? new Date().toISOString() : null,
+          },
+        ],
+        select: true,
+        single: true,
+      },
+    });
     const { data, error } = await supabase
-      .from("form_instances")
+      .from(TABLES.formInstances)
       .insert([
         {
-          user_id,
-          company_id,
-          project_id,
-          title,
-          description,
-          status,
-          submitted_at:
+          [FORM_INSTANCE_FIELDS.userId]: userId,
+          [FORM_INSTANCE_FIELDS.companyId]: companyId,
+          [FORM_INSTANCE_FIELDS.projectId]: projectId,
+          [FORM_INSTANCE_FIELDS.title]: title,
+          [FORM_INSTANCE_FIELDS.description]: description,
+          [FORM_INSTANCE_FIELDS.status]: status,
+          [FORM_INSTANCE_FIELDS.submittedAt]:
             status === "submitted" ? new Date().toISOString() : null,
         },
       ])

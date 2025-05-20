@@ -1,10 +1,11 @@
-import { supabase } from '../../db/supabaseClient';
+import { supabase } from "../../db/supabaseClient";
+import { TABLES, FORM_INSTANCE_MODULE_FIELDS } from "../../constants/database";
 
 // TODO: Move to src/types/forms.ts if not present
 export interface CreateFormModuleFieldInput {
   formId: string;
   formModuleId: string;
-  moduleFieldId: string;
+  moduleFieldId?: string;
   name: string;
   label: string;
   type: string;
@@ -18,7 +19,7 @@ export interface FormModuleField {
   id: string;
   form_id: string;
   form_module_id: string;
-  module_field_id: string;
+  module_field_id?: string;
   name: string;
   label: string;
   type: string;
@@ -26,7 +27,6 @@ export interface FormModuleField {
   field_order: number;
   default_value?: string;
   version: number;
-  created_at: string;
 }
 
 export interface SupabaseError {
@@ -36,18 +36,21 @@ export interface SupabaseError {
 
 export interface FormModuleFieldResult {
   field: FormModuleField | null;
-  error: SupabaseError | null;
+  error: {
+    message: string;
+    details?: any;
+  } | null;
 }
 
 const allowedTypes = [
-  'text',
-  'boolean',
-  'number',
-  'date',
-  'select',
-  'multiselect',
-  'file',
-  'signature',
+  "text",
+  "boolean",
+  "number",
+  "date",
+  "select",
+  "multiselect",
+  "file",
+  "signature",
 ];
 
 export async function createFormModuleField({
@@ -64,51 +67,63 @@ export async function createFormModuleField({
 }: CreateFormModuleFieldInput): Promise<FormModuleFieldResult> {
   // Validate type
   if (!allowedTypes.includes(type)) {
-    return { field: null, error: { message: 'Invalid field type' } };
+    return { field: null, error: { message: "Invalid field type" } };
   }
 
   // Check for uniqueness (form_module_id, name)
   const { data: existing, error: existingError } = await supabase
-    .from('form_instance_module_fields')
-    .select('id')
-    .eq('form_module_id', formModuleId)
-    .eq('name', name)
+    .from(TABLES.formInstanceModuleFields)
+    .select("id")
+    .eq(FORM_INSTANCE_MODULE_FIELDS.formModuleId, formModuleId)
+    .eq(FORM_INSTANCE_MODULE_FIELDS.name, name)
     .maybeSingle();
   if (existingError) {
-    return { field: null, error: { message: existingError.message, details: existingError.details } };
+    return {
+      field: null,
+      error: { message: existingError.message, details: existingError.details },
+    };
   }
   if (existing) {
-    return { field: null, error: { message: 'Field name already exists in this module.' } };
+    return {
+      field: null,
+      error: { message: "Field name already exists in this module." },
+    };
   }
 
   // Insert new form module field
   const { data, error } = await supabase
-    .from('form_instance_module_fields')
+    .from(TABLES.formInstanceModuleFields)
     .insert([
       {
-        form_id: formId,
-        form_module_id: formModuleId,
-        module_field_id: moduleFieldId,
-        name,
-        label,
-        type,
-        required,
-        field_order: fieldOrder,
-        default_value: defaultValue,
-        version,
+        [FORM_INSTANCE_MODULE_FIELDS.formId]: formId,
+        [FORM_INSTANCE_MODULE_FIELDS.formModuleId]: formModuleId,
+        [FORM_INSTANCE_MODULE_FIELDS.moduleFieldId]: moduleFieldId,
+        [FORM_INSTANCE_MODULE_FIELDS.name]: name,
+        [FORM_INSTANCE_MODULE_FIELDS.label]: label,
+        [FORM_INSTANCE_MODULE_FIELDS.type]: type,
+        [FORM_INSTANCE_MODULE_FIELDS.required]: required,
+        [FORM_INSTANCE_MODULE_FIELDS.fieldOrder]: fieldOrder,
+        [FORM_INSTANCE_MODULE_FIELDS.defaultValue]: defaultValue,
+        [FORM_INSTANCE_MODULE_FIELDS.version]: version,
       },
     ])
     .select()
     .single();
 
   if (error) {
-    return { field: null, error: { message: error.message, details: error.details } };
+    return {
+      field: null,
+      error: { message: error.message, details: error.details },
+    };
   }
 
   // Runtime guard for returned data
   if (!data || !data.id) {
-    return { field: null, error: { message: 'Invalid response from Supabase' } };
+    return {
+      field: null,
+      error: { message: "Invalid response from Supabase" },
+    };
   }
 
   return { field: data as FormModuleField, error: null };
-} 
+}

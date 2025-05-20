@@ -1,4 +1,9 @@
 import { supabase } from "../../db/supabaseClient";
+import {
+  TABLES,
+  FORM_INSTANCE_SIGNATURES,
+  STORAGE_BUCKETS,
+} from "../../constants/database";
 
 export interface SignatureMetadata {
   id: string;
@@ -7,7 +12,7 @@ export interface SignatureMetadata {
   timestamp: number;
   hash: string;
   formId: string;
-  form_module_id: string;
+  [FORM_INSTANCE_SIGNATURES.formModuleId]: string;
 }
 
 export async function generateSignatureHash(
@@ -35,7 +40,7 @@ export async function uploadSignatureToSupabase({
 
   // Upload PNG to Supabase Storage
   const { error: uploadError } = await supabase.storage
-    .from("signatures")
+    .from(STORAGE_BUCKETS.signatures)
     .upload(storagePath, blob, {
       cacheControl: "3600",
       contentType: "image/png",
@@ -48,7 +53,7 @@ export async function uploadSignatureToSupabase({
 
   // Get signed URL (1 hour expiry)
   const { data: signedData, error: signedUrlError } = await supabase.storage
-    .from("signatures")
+    .from(STORAGE_BUCKETS.signatures)
     .createSignedUrl(storagePath, 3600);
 
   if (signedUrlError || !signedData || !signedData.signedUrl) {
@@ -57,16 +62,19 @@ export async function uploadSignatureToSupabase({
 
   // Save to form_instance_signatures table with metadata
   const { data, error: dbError } = await supabase
-    .from("form_instance_signatures")
+    .from(TABLES.formInstanceSignatures)
     .insert({
-      form_id: formId,
-      form_module_id: metadata.form_module_id,
-      worker_name: metadata.name,
-      signature_url: storagePath,
-      signed_at: new Date(metadata.timestamp).toISOString(),
-      signature_hash: hash,
-      role: metadata.role,
-      metadata: {
+      [FORM_INSTANCE_SIGNATURES.formId]: formId,
+      [FORM_INSTANCE_SIGNATURES.formModuleId]:
+        metadata[FORM_INSTANCE_SIGNATURES.formModuleId],
+      [FORM_INSTANCE_SIGNATURES.workerName]: metadata.name,
+      [FORM_INSTANCE_SIGNATURES.signatureUrl]: storagePath,
+      [FORM_INSTANCE_SIGNATURES.signedAt]: new Date(
+        metadata.timestamp
+      ).toISOString(),
+      [FORM_INSTANCE_SIGNATURES.signatureHash]: hash,
+      [FORM_INSTANCE_SIGNATURES.role]: metadata.role,
+      [FORM_INSTANCE_SIGNATURES.metadata]: {
         ...metadata,
         public_url: signedData.signedUrl,
       },

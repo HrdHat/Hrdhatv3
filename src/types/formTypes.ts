@@ -2,7 +2,7 @@
 
 export type FormInstance = {
   form_number?: string | null;
-  form_name?: string | null;
+  title?: string | null;
   form_date?: string | null; // ISO date string
   user_form_id?: string | null;
 };
@@ -56,14 +56,9 @@ export type FormAssetPhoto = {
   id: string;
   form_id: string;
   form_module_id: string;
-  storage_path: string;
-  public_url: string;
-  file_name: string;
-  file_size: number;
-  mime_type: string;
-  uploaded_by: string;
+  photo_url: string;
   uploaded_at: string;
-  updated_at: string;
+  uploaded_by: string;
   is_deleted: boolean;
 
   // Optional fields from Supabase schema
@@ -72,6 +67,8 @@ export type FormAssetPhoto = {
   tag?: string | null;
   source?: "mobile" | "web" | "imported";
   deleted_at?: string | null;
+  metadata?: Record<string, unknown> | null;
+  photo_hash?: string | null;
 };
 
 export type Signature = {
@@ -116,3 +113,12 @@ export type FlraFormState = {
   formId?: string; // Stable ID for the current form session
   photosModuleId?: string; // Stable ID for the photos module instance
 };
+
+// Database operation result types
+export type DatabaseResult<T> = {
+  data: T | null;
+  error: Error | null;
+};
+
+export type FormAssetPhotoResult = DatabaseResult<FormAssetPhoto>;
+export type FormAssetPhotoListResult = DatabaseResult<FormAssetPhoto[]>;

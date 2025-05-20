@@ -1,4 +1,9 @@
 import { supabase } from "../../db/supabaseClient";
+import {
+  TABLES,
+  TEMPLATE_MODULE_FIELDS,
+  FORM_INSTANCE_MODULE_FIELDS,
+} from "../../constants/database";
 
 /**
  * Clones all fields from a module template (template_module_fields) into form_instance_module_fields for a new form_module instance.
@@ -16,29 +21,36 @@ export async function cloneFieldsFromModule({
   formModuleId: string;
 }) {
   const { data: moduleFields, error } = await supabase
-    .from("template_module_fields")
+    .from(TABLES.templateModuleFields)
     .select("*")
-    .eq("module_id", moduleId)
-    .order("field_order");
+    .eq(TEMPLATE_MODULE_FIELDS.moduleId, moduleId)
+    .order(TEMPLATE_MODULE_FIELDS.fieldOrder);
 
-  if (error) throw new Error(`Error fetching template_module_fields: ${error.message}`);
+  if (error)
+    throw new Error(`Error fetching template_module_fields: ${error.message}`);
 
   if (!moduleFields || moduleFields.length === 0) return; // Nothing to clone
 
   const insertPayload = moduleFields.map((field: any) => ({
-    form_id: formId,
-    form_module_id: formModuleId,
-    name: field.name,
-    label: field.label,
-    type: field.type,
-    required: field.required,
-    field_order: field.field_order,
-    default_value: field.default_value ?? null,
+    [FORM_INSTANCE_MODULE_FIELDS.formId]: formId,
+    [FORM_INSTANCE_MODULE_FIELDS.formModuleId]: formModuleId,
+    [FORM_INSTANCE_MODULE_FIELDS.name]: field[TEMPLATE_MODULE_FIELDS.name],
+    [FORM_INSTANCE_MODULE_FIELDS.label]: field[TEMPLATE_MODULE_FIELDS.label],
+    [FORM_INSTANCE_MODULE_FIELDS.type]: field[TEMPLATE_MODULE_FIELDS.type],
+    [FORM_INSTANCE_MODULE_FIELDS.required]:
+      field[TEMPLATE_MODULE_FIELDS.required],
+    [FORM_INSTANCE_MODULE_FIELDS.fieldOrder]:
+      field[TEMPLATE_MODULE_FIELDS.fieldOrder],
+    [FORM_INSTANCE_MODULE_FIELDS.defaultValue]:
+      field[TEMPLATE_MODULE_FIELDS.defaultValue] ?? null,
   }));
 
   const { error: insertError } = await supabase
-    .from("form_instance_module_fields")
+    .from(TABLES.formInstanceModuleFields)
     .insert(insertPayload);
 
-  if (insertError) throw new Error(`Error inserting form_instance_module_fields: ${insertError.message}`);
-} 
+  if (insertError)
+    throw new Error(
+      `Error inserting form_instance_module_fields: ${insertError.message}`
+    );
+}

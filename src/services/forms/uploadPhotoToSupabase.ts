@@ -1,4 +1,9 @@
 import { supabase } from "../../db/supabaseClient";
+import {
+  TABLES,
+  FORM_ASSET_PHOTOS,
+  STORAGE_BUCKETS,
+} from "../../constants/database";
 
 export interface PhotoMetadata {
   id: string;
@@ -10,12 +15,12 @@ export interface PhotoMetadata {
 
 export interface UploadPhotoOptions {
   formId: string;
-  moduleId?: string;
+  moduleId: string;
   file: File;
   metadata: PhotoMetadata;
   uploadedBy: string;
   tag?: string;
-  source?: string;
+  source?: "mobile" | "web" | "imported";
   description?: string;
   sortOrder?: number;
   isDeleted?: boolean;
@@ -36,7 +41,7 @@ export interface UploadedPhotoResult {
     tag?: string;
     description?: string;
     formId: string;
-    moduleId?: string;
+    moduleId: string;
     sortOrder?: number;
   };
 }
@@ -71,7 +76,7 @@ export async function uploadPhotoToSupabase({
 
   // Upload file to Supabase Storage
   const { error: uploadError } = await supabase.storage
-    .from("photos")
+    .from(STORAGE_BUCKETS.photos)
     .upload(storagePath, file, {
       cacheControl: "3600",
       contentType: file.type,
@@ -84,7 +89,7 @@ export async function uploadPhotoToSupabase({
 
   // Get signed URL (1 hour expiry)
   const { data: signedData, error: signedUrlError } = await supabase.storage
-    .from("photos")
+    .from(STORAGE_BUCKETS.photos)
     .createSignedUrl(storagePath, 3600);
 
   if (signedUrlError || !signedData || !signedData.signedUrl) {
@@ -92,24 +97,17 @@ export async function uploadPhotoToSupabase({
   }
 
   // Save to form_asset_photos table with all required metadata fields
-  const { error: dbError } = await supabase.from("form_asset_photos").insert({
-    form_id: formId,
-    form_module_id: moduleId,
-    uploaded_by: uploadedBy,
-    storage_path: storagePath,
-    public_url: signedData.signedUrl,
-    file_name: file.name,
-    file_size: file.size,
-    mime_type: file.type,
-    description: description || null,
-    sort_order: sortOrder || null,
-    tag: tag || null,
-    source: source || null,
-    uploaded_at: new Date(metadata.timestamp).toISOString(),
-    updated_at: new Date().toISOString(),
-    is_deleted: isDeleted,
-    deleted_at: deletedAt || null,
-  });
+  const { error: dbError } = await supabase
+    .from(TABLES.formAssetPhotos)
+    .insert({
+      [FORM_ASSET_PHOTOS.formId]: formId,
+      [FORM_ASSET_PHOTOS.formModuleId]: moduleId,
+      [FORM_ASSET_PHOTOS.photoUrl]: signedData.signedUrl,
+      [FORM_ASSET_PHOTOS.description]: description || null,
+      [FORM_ASSET_PHOTOS.uploadedAt]: new Date(
+        metadata.timestamp
+      ).toISOString(),
+    });
 
   if (dbError) {
     throw new Error(`Failed to save photo metadata: ${dbError.message}`);
@@ -163,7 +161,10 @@ export async function uploadMultiplePhotos(
   }
 
   // Start workers
-  const workers = Array.from({ length: Math.min(concurrency, uploads.length) }, worker);
+  const workers = Array.from(
+    { length: Math.min(concurrency, uploads.length) },
+    worker
+  );
   await Promise.all(workers);
   return results;
 }

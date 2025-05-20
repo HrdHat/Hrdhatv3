@@ -8,8 +8,10 @@ import { createFormModuleField } from "./createFormModuleField";
 import { fetchModuleFields, FetchModuleFieldsError } from "./fetchModuleFields";
 import { cloneFieldsFromModule } from "./cloneFieldsFromModule";
 import { supabase } from "../../db/supabaseClient";
+import { FORM_INSTANCE_FIELDS } from "../../constants/database";
 
 export interface CreateFormWithModulesInput {
+  userId: string;
   companyId?: string;
   projectId?: string;
   title: string;
@@ -32,6 +34,7 @@ export interface CreateFormWithModulesResult {
 }
 
 export async function createFormWithModules({
+  userId,
   companyId,
   projectId,
   title,
@@ -55,8 +58,9 @@ export async function createFormWithModules({
 
   // 1. Create the form
   const { form, error: formError } = await createForm({
-    company_id: companyId,
-    project_id: projectId,
+    userId,
+    companyId,
+    projectId,
     title: safeTitle,
     description,
   });
