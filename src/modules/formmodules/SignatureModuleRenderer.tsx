@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import SignatureCanvas from "../../components/shared/SignatureCanvas";
-import { uploadSignatureToSupabase, SignatureMetadata } from "../../services/forms/uploadSignatureToSupabase";
+import {
+  uploadSignatureToSupabase,
+  SignatureMetadata,
+} from "../../services/forms/uploadSignatureToSupabase";
 import { useAuth } from "../../session/AuthProvider";
 import { supabase } from "../../db/supabaseClient";
 
@@ -13,9 +16,17 @@ type Props = {
   value: SignatureMetadata[];
   onChange: (signatures: SignatureMetadata[]) => void;
   formId: string;
+  formModuleId: string;
+  layoutStyle?: "tight" | "loose" | "default";
 };
 
-const SignaturesModule: React.FC<Props> = ({ value, onChange, formId }) => {
+const SignaturesModule: React.FC<Props> = ({
+  value,
+  onChange,
+  formId,
+  formModuleId,
+  layoutStyle = "default",
+}) => {
   if (!value) return null;
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -23,7 +34,7 @@ const SignaturesModule: React.FC<Props> = ({ value, onChange, formId }) => {
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
   // Check if current user has already signed (id is user id)
-  const alreadySigned = !!value.find(sig => sig.id === user?.id);
+  const alreadySigned = !!value.find((sig) => sig.id === user?.id);
 
   // Fetch signed URLs for all signatures
   useEffect(() => {
@@ -42,7 +53,9 @@ const SignaturesModule: React.FC<Props> = ({ value, onChange, formId }) => {
       if (isMounted) setSignedUrls(urlMap);
     }
     fetchUrls();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [value, formId]);
 
   const handleSigned = async ({ name, blob }: { name: string; blob: Blob }) => {
@@ -58,11 +71,12 @@ const SignaturesModule: React.FC<Props> = ({ value, onChange, formId }) => {
           role: user.user_metadata?.role || "",
           timestamp: Date.now(),
           formId,
+          form_module_id: formModuleId,
         },
         blob,
       });
       // Replace or add the user's signature in the list
-      const updated = value.filter(sig => sig.id !== user.id).concat(meta);
+      const updated = value.filter((sig) => sig.id !== user.id).concat(meta);
       onChange(updated);
     } catch (e: any) {
       setError(e.message || "Failed to save signature.");
@@ -72,7 +86,7 @@ const SignaturesModule: React.FC<Props> = ({ value, onChange, formId }) => {
   };
 
   return (
-    <section>
+    <section className={`module-wrapper layout-${layoutStyle}`}>
       <h2>Signatures</h2>
       {!alreadySigned && (
         <SignatureCanvas
@@ -101,7 +115,12 @@ const SignaturesModule: React.FC<Props> = ({ value, onChange, formId }) => {
                 <img
                   src={signedUrls[sig.id]}
                   alt={`Signature of ${sig.name}`}
-                  style={{ border: "1px solid #ccc", background: "#fff", maxWidth: 300, maxHeight: 80 }}
+                  style={{
+                    border: "1px solid #ccc",
+                    background: "#fff",
+                    maxWidth: 300,
+                    maxHeight: 80,
+                  }}
                 />
               ) : (
                 <span>Loading image...</span>
@@ -113,4 +132,4 @@ const SignaturesModule: React.FC<Props> = ({ value, onChange, formId }) => {
   );
 };
 
-export default SignaturesModule; 
+export default SignaturesModule;

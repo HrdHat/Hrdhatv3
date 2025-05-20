@@ -1,0 +1,10 @@
+/* Global design tokens and variables */
+
+:root {
+  /* TODO: add spacing variables */
+  --spacing-tight: 0.5rem;
+  --spacing-default: 1rem;
+  --spacing-loose: 2rem;
+
+  /* TODO: add other design tokens as needed */
+}

@@ -1,0 +1,3 @@
+# Protect critical renderer architecture files
+src\types\renderer.types.ts
+src\components\ModuleRenderer.tsx

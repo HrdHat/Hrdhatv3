@@ -22,12 +22,14 @@ interface FormInstanceModuleProps {
   formId: string;
   formModuleId: string;
   onHeaderChange?: (instance: FormInstance) => void;
+  layoutStyle?: "tight" | "loose" | "default";
 }
 
 const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
   formId,
   formModuleId,
   onHeaderChange,
+  layoutStyle = "default",
 }) => {
   const [instance, setInstance] = useState<FormInstance>({
     form_number: "", // Will be set during initialization
@@ -141,7 +143,7 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
   }
 
   return (
-    <section className="form-instance-module">
+    <section className={`module-wrapper layout-${layoutStyle}`}>
       <h2>Form Instance</h2>
       <div className="header-fields">
         <div className="field-group">
@@ -149,7 +151,9 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
             System Form Number:
             <input
               type="text"
-              value={isGeneratingNumber ? "Generating..." : instance.form_number}
+              value={
+                isGeneratingNumber ? "Generating..." : instance.form_number
+              }
               readOnly
               className="readonly"
               disabled={isGeneratingNumber || isSaving}

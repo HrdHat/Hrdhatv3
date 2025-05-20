@@ -9,6 +9,7 @@ type Props = {
   formId: string;
   formModuleId: string;
   uploadedBy: string;
+  layoutStyle?: "tight" | "loose" | "default";
 };
 
 const FormAssetPhotosModule: React.FC<Props> = ({
@@ -17,6 +18,7 @@ const FormAssetPhotosModule: React.FC<Props> = ({
   formId,
   formModuleId,
   uploadedBy,
+  layoutStyle = "default",
 }) => {
   if (!value) return null;
 
@@ -55,7 +57,7 @@ const FormAssetPhotosModule: React.FC<Props> = ({
   };
 
   return (
-    <section>
+    <section className={`module-wrapper layout-${layoutStyle}`}>
       <h2>Form Asset Photos</h2>
       <div>
         {/* Display existing photos */}

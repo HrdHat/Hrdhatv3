@@ -7,7 +7,7 @@ export interface SignatureMetadata {
   timestamp: number;
   hash: string;
   formId: string;
-  moduleId?: string;
+  form_module_id: string;
 }
 
 export async function generateSignatureHash(
@@ -60,7 +60,7 @@ export async function uploadSignatureToSupabase({
     .from("form_instance_signatures")
     .insert({
       form_id: formId,
-      form_module_id: metadata.moduleId,
+      form_module_id: metadata.form_module_id,
       worker_name: metadata.name,
       signature_url: storagePath,
       signed_at: new Date(metadata.timestamp).toISOString(),

@@ -12,8 +12,9 @@ CREATE TABLE IF NOT EXISTS template_modules (
     company_id uuid,
     project_id uuid,
     is_active boolean NOT NULL DEFAULT true,
-    renderer_key text, -- renderer for UI
-    uses_fields boolean DEFAULT true, -- does this module use fields?
+    renderer_key text,       -- which React component renders this module
+    uses_fields boolean DEFAULT true,   -- does it use form fields
+    layout_style text DEFAULT 'default', -- UI layout style (tight, loose, default, etc)
     created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
     CONSTRAINT fk_template_modules_company_id FOREIGN KEY (company_id) REFERENCES companies(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT fk_template_modules_project_id FOREIGN KEY (project_id) REFERENCES projects(id) ON UPDATE NO ACTION ON DELETE NO ACTION
@@ -421,6 +422,20 @@ VALUES
   ('photos', 'Photos', 'PhotoModuleRenderer', false),
   ('signatures', 'Signatures', 'SignatureModuleRenderer', false)
 ON CONFLICT (name) DO NOTHING;
+
+-- Set layout styles for specific modules
+UPDATE template_modules SET layout_style = 'loose' WHERE name = 'ppe_platform_inspection';
+UPDATE template_modules SET layout_style = 'loose' WHERE name = 'general_information';
+UPDATE template_modules SET layout_style = 'tight' WHERE name = 'pre_job_checklist';
+
+-- Standardize renderer keys for explicit modules (PascalCase, match your frontend render map)
+UPDATE template_modules SET renderer_key = 'FlraHeaderModule' WHERE name = 'header';
+UPDATE template_modules SET renderer_key = 'PhotoModuleRenderer' WHERE name = 'photos';
+UPDATE template_modules SET renderer_key = 'SignatureModuleRenderer' WHERE name = 'signatures';
+UPDATE template_modules SET renderer_key = 'TaskHazardControlModule' WHERE name = 'task_hazard_control';
+UPDATE template_modules SET renderer_key = 'GenericModuleRenderer' WHERE name = 'general_information';
+UPDATE template_modules SET renderer_key = 'GenericModuleRenderer' WHERE name = 'ppe_platform_inspection';
+UPDATE template_modules SET renderer_key = 'GenericModuleRenderer' WHERE name = 'pre_job_checklist';
 
 -- Link Photos and Signatures modules to the FLRA template in form_template_modules
 -- Replace the UUIDs below with the actual IDs from your template_modules table if needed

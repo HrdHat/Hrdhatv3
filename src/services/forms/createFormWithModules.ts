@@ -7,7 +7,7 @@ import {
 import { createFormModuleField } from "./createFormModuleField";
 import { fetchModuleFields, FetchModuleFieldsError } from "./fetchModuleFields";
 import { cloneFieldsFromModule } from "./cloneFieldsFromModule";
-import { supabase } from '../../db/supabaseClient';
+import { supabase } from "../../db/supabaseClient";
 
 export interface CreateFormWithModulesInput {
   companyId?: string;
@@ -124,7 +124,11 @@ export async function createFormWithModules({
           formModuleId: formModule.id,
         });
         if (import.meta.env.DEV) {
-          console.info(`[formModule] ${count ?? 'unknown'} fields cloned into ${formModule.id}`);
+          console.info(
+            `[formModule] ${count ?? "unknown"} fields cloned into ${
+              formModule.id
+            }`
+          );
         }
       } catch (err: any) {
         warnings.push({
@@ -133,8 +137,13 @@ export async function createFormWithModules({
           code: "FIELD_CREATION_ERROR",
         });
       }
-    } else if (rendererKey === "TaskHazardModule") {
-      // await seedTaskHazardDefaults(form.id, formModule.id);
+    } else {
+      // Non-field modules are handled by their specialized renderers
+      if (import.meta.env.DEV) {
+        console.info(
+          `[formModule] Using specialized renderer for module ${moduleId}`
+        );
+      }
     }
   }
 

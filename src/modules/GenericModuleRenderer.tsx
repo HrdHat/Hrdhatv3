@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ModuleWithRenderer } from "../types/modules";
+import { ModuleWithRenderer } from "../types/renderer.types";
 
 interface Field {
   name: string;
@@ -13,11 +13,13 @@ interface Field {
 interface GenericModuleRendererProps {
   module: ModuleWithRenderer;
   onDataChange?: (values: Record<string, any>) => void;
+  layoutStyle?: "tight" | "loose" | "default";
 }
 
 export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
   module,
   onDataChange,
+  layoutStyle = "default",
 }) => {
   // Initialize state with default values
   const initialValues = Object.fromEntries(
@@ -42,14 +44,17 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
   };
 
   // Utility for error state
-  const showError = (field: Field) => touched[field.name] && isFieldEmpty(field);
+  const showError = (field: Field) =>
+    touched[field.name] && isFieldEmpty(field);
 
   const renderInput = (field: Field) => {
     // Normalize type to lowercase and handle textarea/select aliases
     const type =
-      field.type === "text_area" ? "textarea" :
-      field.type === "dropdown" ? "select" :
-      (field.type ?? "");
+      field.type === "text_area"
+        ? "textarea"
+        : field.type === "dropdown"
+        ? "select"
+        : field.type ?? "";
     const normalizedType = type.toLowerCase();
     const id = `field_${field.name}`;
     const errorId = `error_${field.name}`;
@@ -66,7 +71,7 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
               name={field.name}
               id={id}
               checked={!!values[field.name]}
-              onChange={e => handleChange(field.name, e.target.checked)}
+              onChange={(e) => handleChange(field.name, e.target.checked)}
               onBlur={() => handleBlur(field.name)}
               required={isRequired}
               aria-required={isRequired}
@@ -84,7 +89,7 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
               name={field.name}
               id={id}
               value={values[field.name]}
-              onChange={e => handleChange(field.name, e.target.valueAsNumber)}
+              onChange={(e) => handleChange(field.name, e.target.valueAsNumber)}
               onBlur={() => handleBlur(field.name)}
               required={isRequired}
               aria-required={isRequired}
@@ -102,7 +107,7 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
               name={field.name}
               id={id}
               value={values[field.name]}
-              onChange={e => handleChange(field.name, e.target.value)}
+              onChange={(e) => handleChange(field.name, e.target.value)}
               onBlur={() => handleBlur(field.name)}
               required={isRequired}
               aria-required={isRequired}
@@ -120,7 +125,7 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
               name={field.name}
               id={id}
               value={values[field.name]}
-              onChange={e => handleChange(field.name, e.target.value)}
+              onChange={(e) => handleChange(field.name, e.target.value)}
               onBlur={() => handleBlur(field.name)}
               required={isRequired}
               aria-required={isRequired}
@@ -137,7 +142,7 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
               name={field.name}
               id={id}
               value={values[field.name]}
-              onChange={e => handleChange(field.name, e.target.value)}
+              onChange={(e) => handleChange(field.name, e.target.value)}
               onBlur={() => handleBlur(field.name)}
               required={isRequired}
               aria-required={isRequired}
@@ -154,7 +159,7 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
               name={field.name}
               id={id}
               value={values[field.name]}
-              onChange={e => handleChange(field.name, e.target.value)}
+              onChange={(e) => handleChange(field.name, e.target.value)}
               onBlur={() => handleBlur(field.name)}
               required={isRequired}
               aria-required={isRequired}
@@ -179,7 +184,7 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
               name={field.name}
               id={id}
               value={values[field.name]}
-              onChange={e => handleChange(field.name, e.target.value)}
+              onChange={(e) => handleChange(field.name, e.target.value)}
               onBlur={() => handleBlur(field.name)}
               required={isRequired}
               aria-required={isRequired}
@@ -191,11 +196,7 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
       // No file case here
       default:
         console.warn("Unknown field type:", normalizedType, field);
-        return (
-          <div>
-            Unsupported field type: {normalizedType}
-          </div>
-        );
+        return <div>Unsupported field type: {normalizedType}</div>;
     }
   };
 
@@ -203,21 +204,27 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
     const value = values[field.name];
     if (field.type === "boolean") return false;
     // Remove file logic
-    return field.required && (value === undefined || value === null || value === "");
+    return (
+      field.required && (value === undefined || value === null || value === "")
+    );
   };
 
   return (
-    <>
+    <div className={`module-wrapper layout-${layoutStyle}`}>
       <h2>{module.label}</h2>
       {module.fields?.map((field: Field) => {
         // File and signature fields are handled by specialized modules (not rendered here)
-        if (["file", "file_upload", "signature", "signature_pad"].includes(field.type)) {
+        if (
+          ["file", "file_upload", "signature", "signature_pad"].includes(
+            field.type
+          )
+        ) {
           console.warn("Skipping field type (handled elsewhere):", field.type);
           return null;
         }
         return <div key={field.name}>{renderInput(field)}</div>;
       })}
-    </>
+    </div>
   );
 };
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { MissingRendererProps } from "@/types/modules";
+import { MissingRendererProps } from "../types/renderer.types";
 
 export const MissingRenderer: React.FC<MissingRendererProps> = ({
   moduleName,
