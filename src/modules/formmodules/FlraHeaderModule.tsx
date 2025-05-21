@@ -33,8 +33,8 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
 }) => {
   const [instance, setInstance] = useState<FormInstance>({
     form_number: "", // Will be set during initialization
-    user_form_id: null,
-    form_name: null,
+    user_form_id: "", // Changed from null
+    form_name: "", // Changed from null
     form_date: new Date().toISOString().slice(0, 10), // Default to today
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -46,11 +46,9 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
     async (updatedInstance: FormInstance) => {
       setIsSaving(true);
       try {
-        // Optimistic update
-        setInstance(updatedInstance);
-
+        // Don't update state optimistically - wait for successful save
         const { error } = await supabase.from("form_instances").upsert({
-          form_module_id: formModuleId,
+          id: formId, // Add form ID to ensure we update the correct row
           form_number: updatedInstance.form_number,
           user_form_id: updatedInstance.user_form_id,
           form_name: updatedInstance.form_name,
@@ -59,18 +57,19 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
 
         if (error) throw error;
 
+        // Only update state after successful save
+        setInstance(updatedInstance);
         onHeaderChange?.(updatedInstance);
         toast.success("Changes saved");
       } catch (err) {
         console.error("Error saving form instance data:", err);
         toast.error("Failed to save form instance data");
-        // Revert optimistic update
-        setInstance(instance);
+        // Don't revert state on error - let user retry
       } finally {
         setIsSaving(false);
       }
     },
-    [formModuleId, onHeaderChange, instance]
+    [onHeaderChange, formId] // Add formId to dependencies
   );
 
   // Initialize debounced save with memoized callback
@@ -79,28 +78,30 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
   // Combined initialization effect
   useEffect(() => {
     const init = async () => {
+      if (!formId) return; // Early return if no formId
+
       setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from("form_instances")
           .select("*")
-          .eq("form_module_id", formModuleId)
+          .eq("id", formId)
           .single();
 
         if (data) {
           setInstance({
-            form_number: data.form_number,
-            user_form_id: data.user_form_id,
-            form_name: data.form_name,
-            form_date: data.form_date,
+            form_number: data.form_number ?? "",
+            user_form_id: data.user_form_id ?? "",
+            form_name: data.form_name ?? "",
+            form_date: data.form_date ?? "",
           });
         } else if (error?.code === "PGRST116") {
           setIsGeneratingNumber(true);
           const formNumber = await generateFormNumber();
           const newInstance = {
             form_number: formNumber,
-            user_form_id: null,
-            form_name: null,
+            user_form_id: "",
+            form_name: "",
             form_date: new Date().toISOString().slice(0, 10),
           };
           await saveInstanceData(newInstance);
@@ -117,18 +118,14 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
     };
 
     init();
-  }, [formModuleId, saveInstanceData]);
+  }, [formId, saveInstanceData]); // Only depend on stable values
 
   // Check for user form ID conflicts
   const handleUserFormIdChange = async (value: string) => {
-    const updatedInstance = { ...instance, user_form_id: value };
-
-    // Save the change
-    await debouncedSave(updatedInstance);
-
-    // Check if ID is taken if there's a value
-    if (value) {
-      const isTaken = await isUserFormIdTaken(value, formModuleId);
+    const trimmedValue = value.trim();
+    // Check if ID is taken before saving
+    if (trimmedValue) {
+      const isTaken = await isUserFormIdTaken(trimmedValue, formModuleId);
       if (isTaken) {
         toast("Another form already uses this ID. You can still save it.", {
           icon: "⚠️",
@@ -136,6 +133,10 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
         });
       }
     }
+
+    // Save the change after checking
+    const updatedInstance = { ...instance, user_form_id: trimmedValue };
+    await debouncedSave(updatedInstance);
   };
 
   if (isLoading) {
@@ -152,7 +153,9 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
             <input
               type="text"
               value={
-                isGeneratingNumber ? "Generating..." : instance.form_number
+                isGeneratingNumber
+                  ? "Generating..."
+                  : instance.form_number ?? ""
               }
               readOnly
               className="readonly"
@@ -166,7 +169,7 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
             Your Stock/Form Number:
             <input
               type="text"
-              value={instance.user_form_id || ""}
+              value={instance.user_form_id ?? ""}
               onChange={(e) => handleUserFormIdChange(e.target.value)}
               placeholder="Optional reference number"
               disabled={isGeneratingNumber || isSaving}
@@ -179,9 +182,9 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
             Form Name:
             <input
               type="text"
-              value={instance.form_name || ""}
+              value={instance.form_name ?? ""}
               onChange={(e) =>
-                debouncedSave({ ...instance, form_name: e.target.value })
+                debouncedSave({ ...instance, form_name: e.target.value.trim() })
               }
               required
               disabled={isGeneratingNumber || isSaving}
@@ -194,7 +197,7 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
             Form Date:
             <input
               type="date"
-              value={instance.form_date || ""}
+              value={instance.form_date ?? ""}
               onChange={(e) => {
                 const val = e.target.value;
                 if (isValidISODate(val)) {
