@@ -27,13 +27,15 @@ export async function generateFormNumber(): Promise<string> {
 /**
  * Checks if a user-supplied form ID is already taken for a given form module.
  */
-export async function isUserFormIdTaken(userFormId: string, formModuleId: string): Promise<boolean> {
+export async function isUserFormIdTaken(
+  userFormId: string,
+  formModuleId: string
+): Promise<boolean> {
   if (!userFormId) return false;
   const { data, error } = await supabase
     .from("form_instances")
     .select("id")
     .eq("user_form_id", userFormId)
-    .eq("form_module_id", formModuleId)
     .maybeSingle();
   return !!data;
-} 
+}

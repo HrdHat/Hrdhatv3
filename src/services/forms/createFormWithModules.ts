@@ -1,4 +1,9 @@
-import { createForm, FlraForm, SupabaseError as FormError } from "./createForm";
+import {
+  createForm,
+  FlraForm,
+  SupabaseError as FormError,
+  CreateFormInput,
+} from "./createForm";
 import {
   createFormModule,
   FormModule,
@@ -8,6 +13,11 @@ import { createFormModuleField } from "./createFormModuleField";
 import { fetchModuleFields, FetchModuleFieldsError } from "./fetchModuleFields";
 import { cloneFieldsFromModule } from "./cloneFieldsFromModule";
 import { supabase } from "../../db/supabaseClient";
+import {
+  TABLES,
+  TEMPLATE_MODULES_FIELDS,
+  FORM_INSTANCES_FIELDS,
+} from "../../constants/database";
 
 export interface CreateFormWithModulesInput {
   companyId?: string;
@@ -31,6 +41,29 @@ export interface CreateFormWithModulesResult {
   warnings: FormCreationWarning[];
 }
 
+// Add this type above your function
+type MinimalFormInput = Pick<
+  CreateFormWithModulesInput,
+  "companyId" | "projectId" | "title" | "description"
+>;
+
+// Update the function signature to use the minimal type
+function mapFormInputToDb(input: MinimalFormInput): CreateFormInput {
+  return {
+    company_id: input.companyId,
+    project_id: input.projectId,
+    title: input.title,
+    description: input.description,
+    status: "draft" as const,
+  };
+}
+
+type TemplateModuleMeta = {
+  [TEMPLATE_MODULES_FIELDS.usesFields]: boolean;
+  [TEMPLATE_MODULES_FIELDS.rendererKey]: string;
+  // ...add other fields as needed
+};
+
 export async function createFormWithModules({
   companyId,
   projectId,
@@ -53,13 +86,16 @@ export async function createFormWithModules({
     };
   }
 
-  // 1. Create the form
-  const { form, error: formError } = await createForm({
-    company_id: companyId,
-    project_id: projectId,
-    title: safeTitle,
-    description,
-  });
+  // 1. Create the form using mapped fields
+  const { form, error: formError } = await createForm(
+    mapFormInputToDb({
+      companyId,
+      projectId,
+      title: safeTitle,
+      description,
+    })
+  );
+
   if (formError || !form) {
     return {
       form: null,
@@ -97,12 +133,20 @@ export async function createFormWithModules({
     }
     modules.push(formModule);
 
-    // Fetch module metadata to check uses_fields and renderer_key
-    const { data: moduleMeta, error: moduleMetaError } = await supabase
-      .from("template_modules")
-      .select("id, name, label, renderer_key, uses_fields")
-      .eq("id", moduleId)
-      .single();
+    // Fetch module metadata using constants
+    const { data: moduleMeta, error: moduleMetaError } = (await supabase
+      .from(TABLES.templateModules)
+      .select(
+        [
+          TEMPLATE_MODULES_FIELDS.id,
+          TEMPLATE_MODULES_FIELDS.name,
+          TEMPLATE_MODULES_FIELDS.label,
+          TEMPLATE_MODULES_FIELDS.rendererKey,
+          TEMPLATE_MODULES_FIELDS.usesFields,
+        ].join(", ")
+      )
+      .eq(TEMPLATE_MODULES_FIELDS.id, moduleId)
+      .single()) as { data: TemplateModuleMeta | null; error: any };
 
     if (moduleMetaError) {
       warnings.push({
@@ -113,8 +157,8 @@ export async function createFormWithModules({
       continue; // skip to next module
     }
 
-    const usesFields = moduleMeta?.uses_fields ?? true;
-    const rendererKey = moduleMeta?.renderer_key;
+    const usesFields = moduleMeta?.[TEMPLATE_MODULES_FIELDS.usesFields] ?? true;
+    const rendererKey = moduleMeta?.[TEMPLATE_MODULES_FIELDS.rendererKey];
 
     if (usesFields) {
       try {
