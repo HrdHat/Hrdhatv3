@@ -11,6 +11,7 @@ import {
 } from "../../utils/formNumberGenerator";
 import { TABLES } from "../../constants/database";
 import toast from "react-hot-toast";
+import { PostgrestError } from "@supabase/supabase-js";
 
 // Utility function to validate ISO date strings
 const isValidISODate = (str: string): boolean => {
@@ -24,6 +25,12 @@ interface FormInstanceModuleProps {
   formModuleId: string;
   onHeaderChange?: (instance: FormInstance) => void;
   layoutStyle?: "tight" | "loose" | "default";
+}
+
+interface FormInstanceModule {
+  id: string;
+  form_id: string;
+  // ... other fields
 }
 
 const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
@@ -47,33 +54,18 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
     async (updatedInstance: FormInstance) => {
       setIsSaving(true);
       try {
-        // Optimistic update
-        setInstance(updatedInstance);
+        // First get the form_id from the junction table
+        const { data: formModule, error: moduleError } = await supabase
+          .from("form_instance_modules")
+          .select("form_id")
+          .eq("id", formModuleId)
+          .single();
 
-        console.log("Supabase Query:", {
-          table: TABLES.formInstances,
-          operation: "upsert",
-          data: {
-            form_module_id: formModuleId,
-            form_number: updatedInstance.form_number,
-            user_form_id: updatedInstance.user_form_id,
-            title: updatedInstance.title,
-            form_date: updatedInstance.form_date,
-          },
-          fullQuery: {
-            from: TABLES.formInstances,
-            upsert: {
-              form_module_id: formModuleId,
-              form_number: updatedInstance.form_number,
-              user_form_id: updatedInstance.user_form_id,
-              title: updatedInstance.title,
-              form_date: updatedInstance.form_date,
-            },
-          },
-        });
+        if (moduleError) throw moduleError;
 
-        const { error } = await supabase.from(TABLES.formInstances).upsert({
-          form_module_id: formModuleId,
+        // Then upsert using the correct form_id
+        const { error } = await supabase.from("form_instances").upsert({
+          id: formModule.form_id, // Critical for updates
           form_number: updatedInstance.form_number,
           user_form_id: updatedInstance.user_form_id,
           title: updatedInstance.title,
@@ -81,19 +73,15 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
         });
 
         if (error) throw error;
-
-        onHeaderChange?.(updatedInstance);
-        toast.success("Changes saved");
+        toast.success("Saved successfully!");
       } catch (err) {
-        console.error("Error saving form instance data:", err);
-        toast.error("Failed to save form instance data");
-        // Revert optimistic update
-        setInstance(instance);
+        console.error("Save error:", err);
+        toast.error("Save failed");
       } finally {
         setIsSaving(false);
       }
     },
-    [formModuleId, onHeaderChange, instance]
+    [formModuleId]
   );
 
   // Initialize debounced save with memoized callback
@@ -104,32 +92,31 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
     const init = async () => {
       setIsLoading(true);
       try {
-        console.log("Supabase Query:", {
-          table: TABLES.formInstances,
-          operation: "select",
-          filters: { form_module_id: formModuleId },
-          fullQuery: {
-            from: TABLES.formInstances,
-            select: "*",
-            eq: { form_module_id: formModuleId },
-            single: true,
-          },
-        });
-
-        const { data, error } = await supabase
-          .from(TABLES.formInstances)
+        // Replace old query with relational fetch
+        const { data: formModule, error: moduleError } = await supabase
+          .from("form_instance_modules")
           .select("*")
-          .eq("form_module_id", formModuleId)
+          .eq("id", formModuleId)
           .single();
 
-        if (data) {
+        if (moduleError) throw moduleError;
+
+        const { data: formInstance, error: formError } = await supabase
+          .from("form_instances")
+          .select("*")
+          .eq("id", formModule.form_id) // Correct column
+          .single();
+
+        if (formError) throw formError;
+
+        if (formInstance) {
           setInstance({
-            form_number: data.form_number,
-            user_form_id: data.user_form_id,
-            title: data.title,
-            form_date: data.form_date,
+            form_number: formInstance.form_number,
+            user_form_id: formInstance.user_form_id,
+            title: formInstance.title,
+            form_date: formInstance.form_date,
           });
-        } else if (error?.code === "PGRST116") {
+        } else if ((formError as PostgrestError)?.code === "PGRST116") {
           setIsGeneratingNumber(true);
           const formNumber = await generateFormNumber();
           const newInstance = {
@@ -140,11 +127,11 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
           };
           await saveInstanceData(newInstance);
         } else {
-          throw error;
+          throw formError;
         }
       } catch (err) {
-        console.error("Error initializing form instance:", err);
-        toast.error("Failed to initialize form instance");
+        console.error("Initialization error:", err);
+        toast.error("Failed to load form data");
       } finally {
         setIsLoading(false);
         setIsGeneratingNumber(false);
