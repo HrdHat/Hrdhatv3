@@ -1,4 +1,10 @@
+import { z } from "zod";
+
 // Shared FLRA form types for use in centralized state management
+
+// Form status constants
+export const FORM_STATUSES = ["draft", "submitted", "archived"] as const;
+export type FormStatus = (typeof FORM_STATUSES)[number];
 
 export type FormInstance = {
   form_number?: string | null;
@@ -105,7 +111,7 @@ export type FlraFormState = {
   taskHazards: TaskHazardControl[];
   photos: FormAssetPhoto[];
   signatures: Signature[];
-  status?: "draft" | "submitted" | "archived";
+  status?: FormStatus;
 
   // TEMPORARY: Bridge solution until full form saving is implemented
   // These IDs ensure photos stay organized during form creation
@@ -122,3 +128,63 @@ export type DatabaseResult<T> = {
 
 export type FormAssetPhotoResult = DatabaseResult<FormAssetPhoto>;
 export type FormAssetPhotoListResult = DatabaseResult<FormAssetPhoto[]>;
+
+export interface SaveFieldsParams<T extends ModuleKey> {
+  formId: string;
+  moduleKey: T;
+  data: ModuleData[T];
+  version?: number;
+  updated_at?: string; // ISO timestamp of last save
+}
+
+// Module Key Types
+export type ModuleKey =
+  | "header"
+  | "general"
+  | "preJobChecklist"
+  | "ppeChecklist"
+  | "taskHazards"
+  | "photos"
+  | "signatures";
+
+// Type-safe Module Data Types
+export interface ModuleData {
+  header: FormInstance;
+  general: GeneralInformation;
+  preJobChecklist: PreJobTaskChecklist;
+  ppeChecklist: PpeEquipmentChecklist;
+  taskHazards: TaskHazardControl[];
+  photos: FormAssetPhoto[];
+  signatures: Signature[];
+}
+
+// Module Key Mapping
+export const MODULE_KEY_MAP = {
+  Header: "header",
+  "General Information": "general",
+  "Pre-Job Checklist": "preJobChecklist",
+  "PPE and Platform Inspection": "ppeChecklist",
+  "Task Hazards": "taskHazards",
+  Photos: "photos",
+  Signatures: "signatures",
+} as const;
+
+type ModuleKeyMapKey = keyof typeof MODULE_KEY_MAP;
+
+// Reverse mapping for display names
+export const MODULE_LABEL_MAP: Record<ModuleKey, string> = Object.entries(
+  MODULE_KEY_MAP
+).reduce((acc, [label, key]) => {
+  acc[key as ModuleKey] = label;
+  return acc;
+}, {} as Record<ModuleKey, string>);
+
+// Helper function to get module key
+export function getModuleKey(moduleType: ModuleKeyMapKey): ModuleKey {
+  return MODULE_KEY_MAP[moduleType];
+}
+
+// Helper function to get module label
+export function getModuleLabel(key: ModuleKey): string {
+  return MODULE_LABEL_MAP[key];
+}
