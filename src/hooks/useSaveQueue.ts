@@ -1,13 +1,13 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useDebouncedSave } from "./useDebouncedSave";
-import { SaveFieldsParams } from "../types/formTypes";
+import { SaveFormModuleDataParams } from "../types/formTypes";
 import { useToast } from "./useToast";
 
 const STORAGE_KEY = "flra_save_queue";
 
 interface QueuedSave {
   id: string;
-  params: SaveFieldsParams<any>;
+  params: SaveFormModuleDataParams<any>;
   timestamp: number;
   retryCount: number;
 }
@@ -19,7 +19,14 @@ interface SaveQueueState {
   lastError: Error | null;
 }
 
-export function useSaveQueue() {
+interface SaveQueueReturn {
+  addToQueue: (params: SaveFormModuleDataParams<any>) => void;
+  clearQueue: () => void;
+  retryFailed: () => void;
+  state: SaveQueueState;
+}
+
+export function useSaveQueue(): SaveQueueReturn {
   const [state, setState] = useState<SaveQueueState>({
     isOnline: navigator.onLine,
     queueLength: 0,
@@ -27,7 +34,7 @@ export function useSaveQueue() {
     lastError: null,
   });
   const queue = useRef<QueuedSave[]>([]);
-  const { save, status } = useDebouncedSave();
+  const { save } = useDebouncedSave();
   const { showToast } = useToast();
 
   // Load queue from localStorage on mount
@@ -43,14 +50,13 @@ export function useSaveQueue() {
     }
   }, []);
 
-  // Save queue to localStorage whenever it changes
-  useEffect(() => {
+  const saveQueueToStorage = useCallback(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(queue.current));
     } catch (error) {
       console.error("Failed to save queue to localStorage:", error);
     }
-  }, [queue.current]);
+  }, []);
 
   // Handle online/offline status changes
   useEffect(() => {
@@ -72,7 +78,7 @@ export function useSaveQueue() {
     };
   }, []);
 
-  const processQueue = useCallback(async () => {
+  const processQueue = useCallback(async (): Promise<void> => {
     if (state.isProcessing || !state.isOnline || queue.current.length === 0) {
       return;
     }
@@ -85,6 +91,7 @@ export function useSaveQueue() {
       try {
         await save(item.params);
         queue.current.shift(); // Remove processed item
+        saveQueueToStorage(); // Save updated queue
         setState((prev) => ({
           ...prev,
           queueLength: queue.current.length,
@@ -97,6 +104,7 @@ export function useSaveQueue() {
 
         if (item.retryCount < 3) {
           queue.current.push(item);
+          saveQueueToStorage(); // Save updated queue
         } else {
           setState((prev) => ({
             ...prev,
@@ -114,11 +122,11 @@ export function useSaveQueue() {
     }
 
     setState((prev) => ({ ...prev, isProcessing: false }));
-  }, [state.isOnline, state.isProcessing, save, showToast]);
+  }, [state.isOnline, state.isProcessing, save, showToast, saveQueueToStorage]);
 
   const addToQueue = useCallback(
-    (params: SaveFieldsParams<any>) => {
-      const id = `${params.moduleKey}_${Date.now()}`;
+    (params: SaveFormModuleDataParams<any>): void => {
+      const id = `${params.formId}_${params.moduleKey}_${Date.now()}`;
       const queuedSave: QueuedSave = {
         id,
         params,
@@ -127,6 +135,7 @@ export function useSaveQueue() {
       };
 
       queue.current.push(queuedSave);
+      saveQueueToStorage(); // Save updated queue
       setState((prev) => ({
         ...prev,
         queueLength: queue.current.length,
@@ -142,20 +151,20 @@ export function useSaveQueue() {
         });
       }
     },
-    [state.isOnline, processQueue, showToast]
+    [state.isOnline, processQueue, showToast, saveQueueToStorage]
   );
 
-  const clearQueue = useCallback(() => {
+  const clearQueue = useCallback((): void => {
     queue.current = [];
+    saveQueueToStorage(); // Save empty queue
     setState((prev) => ({
       ...prev,
       queueLength: 0,
       lastError: null,
     }));
-    localStorage.removeItem(STORAGE_KEY);
-  }, []);
+  }, [saveQueueToStorage]);
 
-  const retryFailed = useCallback(() => {
+  const retryFailed = useCallback((): void => {
     if (state.isOnline) {
       processQueue();
     } else {

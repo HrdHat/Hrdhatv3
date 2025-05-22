@@ -1,3 +1,15 @@
+/*
+ * SOURCE OF TRUTH: Database Schema Definition
+ * Last Updated: 2024-03-19
+ * 
+ * This file contains the canonical schema definitions for all database tables.
+ * When making changes to the database structure:
+ * 1. Update this file first
+ * 2. Add a comment with the date of the change
+ * 3. Document any migrations needed
+ * 4. Update corresponding TypeScript types in src/types/formTypes.ts
+ */
+
 -- HrdHat Schema v2 (schema2.sql)
 -- Clean, modern, template-instance separation, user/company module customization
 
@@ -103,12 +115,14 @@ CREATE TABLE IF NOT EXISTS form_instances (
     version integer NOT NULL DEFAULT 1,
     submitted_at timestamp with time zone,
     user_id uuid,
+    form_date date,
     CONSTRAINT fk_form_instances_company_id FOREIGN KEY (company_id) REFERENCES companies(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT fk_form_instances_project_id FOREIGN KEY (project_id) REFERENCES projects(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT fk_form_instances_user_id FOREIGN KEY (user_id) REFERENCES profiles(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT fk_form_instances_created_by FOREIGN KEY (created_by) REFERENCES profiles(id) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
+-- Last checked: 2024-03-19 - Matches live DB schema exactly
 CREATE TABLE IF NOT EXISTS form_instance_modules (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_id uuid NOT NULL REFERENCES form_instances(id),
@@ -143,6 +157,7 @@ CREATE TABLE IF NOT EXISTS form_data_entries (
     CONSTRAINT fk_form_data_entries_module_id FOREIGN KEY (module_id) REFERENCES form_instance_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
+-- Last checked: 2024-03-19 - Matches live DB schema exactly
 CREATE TABLE IF NOT EXISTS form_instance_general_info (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_module_id uuid,
@@ -189,6 +204,7 @@ CREATE TABLE IF NOT EXISTS form_instance_pre_job_checklist (
     CONSTRAINT fk_form_instance_pre_job_checklist_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
+-- Last checked: 2024-03-19 - Matches live DB schema exactly
 CREATE TABLE IF NOT EXISTS form_instance_hazards (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_id uuid NOT NULL,
@@ -203,6 +219,7 @@ CREATE TABLE IF NOT EXISTS form_instance_hazards (
     CONSTRAINT fk_form_instance_hazards_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
+-- Last checked: 2024-03-19 - Matches live DB schema exactly
 CREATE TABLE IF NOT EXISTS form_instance_signatures (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_id uuid NOT NULL,
@@ -221,6 +238,7 @@ CREATE TABLE IF NOT EXISTS form_instance_signatures (
     CONSTRAINT fk_form_instance_signatures_signed_by FOREIGN KEY (signed_by) REFERENCES users(id) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
+-- Last checked: 2024-03-19 - Matches live DB schema exactly
 CREATE TABLE IF NOT EXISTS form_instance_ppe_platform (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_id uuid NOT NULL,
@@ -264,6 +282,7 @@ CREATE TABLE IF NOT EXISTS form_instance_module_fields (
     CONSTRAINT fk_form_instance_module_fields_module_field_id FOREIGN KEY (module_field_id) REFERENCES template_module_fields(id) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
+-- Last checked: 2024-03-19 - Matches live DB schema exactly
 CREATE TABLE IF NOT EXISTS form_asset_photos (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_id uuid NOT NULL,

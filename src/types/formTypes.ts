@@ -7,26 +7,44 @@ export const FORM_STATUSES = ["draft", "submitted", "archived"] as const;
 export type FormStatus = (typeof FORM_STATUSES)[number];
 
 export type FormInstance = {
-  form_number?: string | null;
-  title?: string | null;
-  form_date?: string | null; // ISO date string
-  user_form_id?: string | null;
+  id: string; // uuid, required
+  form_number?: string | null; // text, nullable
+  created_by?: string | null; // uuid, nullable
+  status?: string | null; // text, nullable
+  last_modified?: string | null; // timestamp with time zone, nullable
+  created_at: string; // timestamp with time zone, required
+  auto_archived?: boolean | null; // boolean, nullable
+  data?: Record<string, unknown> | null; // jsonb, nullable
+  company_id?: string | null; // uuid, nullable
+  project_id?: string | null; // uuid, nullable
+  title?: string | null; // text, nullable
+  description?: string | null; // text, nullable
+  version: number; // integer, required
+  submitted_at?: string | null; // timestamp with time zone, nullable
+  user_id?: string | null; // uuid, nullable
+  form_date?: string | null; // date, nullable, will be converted to date in DB
 };
 
 export type GeneralInformation = {
-  project_name?: string | null;
-  project_address?: string | null;
-  task_location?: string | null;
-  supervisor_name?: string | null;
-  supervisor_contact?: string | null;
-  date?: string | null; // ISO date string
-  crew_members_count?: number | null;
-  task_description?: string | null;
-  start_time?: string | null; // ISO time string
-  end_time?: string | null; // ISO time string
+  id: string; // uuid, required
+  form_module_id?: string | null; // uuid, nullable
+  project_name?: string | null; // text, nullable
+  project_address?: string | null; // text, nullable
+  task_location?: string | null; // text, nullable
+  supervisor_name?: string | null; // text, nullable
+  supervisor_contact?: string | null; // text, nullable
+  date?: string | null; // date, nullable, will be converted to date in DB
+  crew_members_count?: number | null; // integer, nullable
+  task_description?: string | null; // text, nullable
+  start_time?: string | null; // time without time zone, nullable, will be converted to time in DB
+  end_time?: string | null; // time without time zone, nullable, will be converted to time in DB
+  created_at: string; // timestamp with time zone, required
 };
 
 export type PreJobTaskChecklist = {
+  id: string; // uuid, required
+  form_id: string; // uuid, required
+  form_module_id?: string | null; // uuid, nullable
   is_fit_for_duty?: boolean | null;
   reviewed_work_area_for_hazards?: boolean | null;
   required_ppe_for_today?: boolean | null;
@@ -47,43 +65,49 @@ export type PreJobTaskChecklist = {
   weather_suitable_for_work?: boolean | null;
   know_designated_first_aid_attendant?: boolean | null;
   aware_of_site_notices_or_bulletins?: boolean | null;
+  created_at: string; // timestamp with time zone, required
 };
 
 export type TaskHazardControl = {
-  task: string;
-  hazard: string;
-  risk_level_before?: number | null;
-  control: string;
-  risk_level_after?: number | null;
+  id: string; // uuid, required
+  form_id: string; // uuid, required
+  form_module_id?: string | null; // uuid, nullable
+  task: string; // text, required
+  hazard: string; // text, required
+  risk_level_before?: number | null; // integer, nullable
+  control: string; // text, required
+  risk_level_after?: number | null; // integer, nullable
+  created_at: string; // timestamp with time zone, required
 };
 
 export type FormAssetPhoto = {
-  // Required fields from Supabase schema
-  id: string;
-  form_id: string;
-  form_module_id: string;
-  photo_url: string;
-  uploaded_at: string;
-  uploaded_by: string;
-  is_deleted: boolean;
-
-  // Optional fields from Supabase schema
-  description?: string | null;
-  sort_order?: number | null;
-  tag?: string | null;
-  source?: "mobile" | "web" | "imported";
-  deleted_at?: string | null;
-  metadata?: Record<string, unknown> | null;
-  photo_hash?: string | null;
+  id: string; // uuid, required
+  form_id: string; // uuid, required
+  form_module_id?: string | null; // uuid, nullable
+  photo_url: string; // text, required
+  description?: string | null; // text, nullable
+  uploaded_at: string; // timestamp with time zone, required
 };
 
 export type Signature = {
-  worker_name: string;
-  signature_url: string;
-  signed_at: string; // ISO datetime string
+  id: string; // uuid, required
+  form_id: string; // uuid, required
+  form_module_id?: string | null; // uuid, nullable
+  worker_name: string; // text, required
+  signature_url: string; // text, required
+  signed_at: string; // timestamp with time zone, required
+  signature_hash?: string | null; // text, nullable
+  role?: string | null; // text, nullable
+  metadata?: Record<string, unknown> | null; // jsonb, nullable
+  signed_by?: string | null; // uuid, nullable
+  is_deleted?: boolean | null; // boolean, nullable
+  deleted_at?: string | null; // timestamp with time zone, nullable
 };
 
 export type PpeEquipmentChecklist = {
+  id: string; // uuid, required
+  form_id: string; // uuid, required
+  form_module_id?: string | null; // uuid, nullable
   ppe_hardhat?: boolean | null;
   ppe_safety_vest?: boolean | null;
   ppe_safety_glasses?: boolean | null;
@@ -101,6 +125,7 @@ export type PpeEquipmentChecklist = {
   platform_boom_lift?: boolean | null;
   platform_swing_stage?: boolean | null;
   platform_hydro_lift?: boolean | null;
+  created_at: string; // timestamp with time zone, required
 };
 
 export type FlraFormState = {
@@ -120,6 +145,16 @@ export type FlraFormState = {
   photosModuleId?: string; // Stable ID for the photos module instance
 };
 
+export type FormInstanceModule = {
+  id: string; // uuid, required
+  form_id: string; // uuid, required
+  module_id: string; // uuid, required
+  module_order: number; // integer, required
+  is_required: boolean; // boolean, required
+  created_at: string; // timestamp with time zone, required
+  completion_state: string; // text, required
+};
+
 // Database operation result types
 export type DatabaseResult<T> = {
   data: T | null;
@@ -129,12 +164,13 @@ export type DatabaseResult<T> = {
 export type FormAssetPhotoResult = DatabaseResult<FormAssetPhoto>;
 export type FormAssetPhotoListResult = DatabaseResult<FormAssetPhoto[]>;
 
-export interface SaveFieldsParams<T extends ModuleKey> {
+export interface SaveFormModuleDataParams<T extends ModuleKey = ModuleKey> {
   formId: string;
   moduleKey: T;
   data: ModuleData[T];
+  moduleId?: string;
   version?: number;
-  updated_at?: string; // ISO timestamp of last save
+  updated_at?: string;
 }
 
 // Module Key Types
@@ -187,4 +223,11 @@ export function getModuleKey(moduleType: ModuleKeyMapKey): ModuleKey {
 // Helper function to get module label
 export function getModuleLabel(key: ModuleKey): string {
   return MODULE_LABEL_MAP[key];
+}
+
+// Runtime type guard for module keys
+export function assertModuleKey(key: string): asserts key is ModuleKey {
+  if (!Object.values(MODULE_KEY_MAP).includes(key as ModuleKey)) {
+    throw new Error(`Invalid module key: ${key}`);
+  }
 }

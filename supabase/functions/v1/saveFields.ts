@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { TABLES } from "../../constants/database";
-import { SaveFieldsParams, ModuleData } from "../../types/formTypes";
+import { SaveFormModuleDataParams, ModuleData } from "../../types/formTypes";
 import {
   generalInfoSchema,
   preJobChecklistSchema,
@@ -68,7 +68,7 @@ export async function saveFields(req: Request) {
     }
 
     const { formId, moduleKey, data, version, updated_at } =
-      (await req.json()) as SaveFieldsParams<keyof ModuleData>;
+      (await req.json()) as SaveFormModuleDataParams<keyof ModuleData>;
 
     // Validate request payload
     if (!formId || !moduleKey || !data) {

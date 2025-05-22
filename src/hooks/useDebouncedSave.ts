@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback } from "react";
 import { debounce } from "lodash";
-import { saveFields, SaveFieldsParams } from "../services/forms/saveFields";
+import { saveFields } from "../services/forms/saveFields";
+import { SaveFormModuleDataParams } from "../types/formTypes";
 import { useToast } from "./useToast";
 import { useSaveQueue } from "./useSaveQueue";
 import { useModuleState } from "./useModuleState";
@@ -29,7 +30,7 @@ export function useDebouncedSave<T extends ModuleKey>(delay = 1000) {
   const { showToast } = useToast();
   const { setModuleDirty, setModuleSaving, setModuleSaved, setModuleError } =
     useModuleState();
-  const saveQueueRef = useRef<Map<string, SaveFieldsParams>>(new Map());
+  const saveQueueRef = useRef<Map<string, SaveFormModuleDataParams>>(new Map());
 
   const processSaveQueue = useCallback(async () => {
     if (saveQueueRef.current.size === 0) return;
@@ -119,7 +120,7 @@ export function useDebouncedSave<T extends ModuleKey>(delay = 1000) {
   ]);
 
   const save = useCallback(
-    (params: SaveFieldsParams) => {
+    (params: SaveFormModuleDataParams) => {
       const key = `${params.formId}-${params.moduleKey}`;
       saveQueueRef.current.set(key, params);
       setModuleDirty(params.moduleKey, true);
