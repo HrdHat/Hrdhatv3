@@ -4,7 +4,23 @@ import {
   FORM_ASSET_PHOTOS,
   STORAGE_BUCKETS,
 } from "../../constants/database";
-import { FormAssetPhoto, FormAssetPhotoResult } from "../../types/formTypes";
+import {
+  FormAssetPhoto,
+  FormAssetPhotoResult,
+  FormAssetPhotoListResult,
+} from "../../types/formTypes";
+
+/**
+ * This service bypasses saveFormModuleData because it handles specialized file operations:
+ * 1. File validation (type, size, etc.)
+ * 2. File storage in Supabase Storage
+ * 3. Public URL generation
+ * 4. Metadata storage
+ *
+ * While it does write to the form_asset_photos table, it's part of a larger file upload
+ * workflow that requires its own validation and error handling. The metadata insert is
+ * just one step in this process.
+ */
 
 // Allowed file types
 const ALLOWED_TYPES = [
@@ -135,6 +151,7 @@ export async function uploadImageToFormModule({
         [FORM_ASSET_PHOTOS.uploadedAt]: new Date().toISOString(),
         [FORM_ASSET_PHOTOS.uploadedBy]: uploadedBy,
         [FORM_ASSET_PHOTOS.isDeleted]: false,
+        [FORM_ASSET_PHOTOS.deletedAt]: null,
         [FORM_ASSET_PHOTOS.tag]: tag,
         [FORM_ASSET_PHOTOS.source]: source,
       },
@@ -152,5 +169,26 @@ export async function uploadImageToFormModule({
   return {
     data: data as FormAssetPhoto,
     error: null,
+  };
+}
+
+/**
+ * Fetches photos for a form module, excluding soft-deleted photos
+ */
+export async function getFormModulePhotos(
+  formId: string,
+  formModuleId: string
+): Promise<FormAssetPhotoListResult> {
+  const { data, error } = await supabase
+    .from(TABLES.formAssetPhotos)
+    .select()
+    .eq(FORM_ASSET_PHOTOS.formId, formId)
+    .eq(FORM_ASSET_PHOTOS.formModuleId, formModuleId)
+    .is(FORM_ASSET_PHOTOS.isDeleted, false) // Always exclude soft-deleted photos
+    .order(FORM_ASSET_PHOTOS.uploadedAt, { ascending: false });
+
+  return {
+    data: data as FormAssetPhoto[],
+    error: error ? new Error(error.message) : null,
   };
 }

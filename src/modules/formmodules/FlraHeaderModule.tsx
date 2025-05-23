@@ -1,10 +1,10 @@
 // @cursor-ai
 // Custom-rendered form instance module. Fields are hardcoded.
 // Do not auto-insert or bind dynamic field logic here.
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "../../db/supabaseClient";
 import { FormInstance } from "../../types/formTypes";
-import { useDebouncedSave } from "../../hooks/useDebouncedSave";
+import { useDebouncedFormHeaderSave } from "../../hooks/useDebouncedFormHeaderSave";
 import {
   generateFormNumber,
   isUserFormIdTaken,
@@ -12,6 +12,7 @@ import {
 import { TABLES } from "../../constants/database";
 import toast from "react-hot-toast";
 import { PostgrestError } from "@supabase/supabase-js";
+import { saveFormHeader } from "../../services/forms/saveFormHeader";
 
 // Utility function to validate ISO date strings
 const isValidISODate = (str: string): boolean => {
@@ -27,65 +28,21 @@ interface FormInstanceModuleProps {
   layoutStyle?: "tight" | "loose" | "default";
 }
 
-interface FormInstanceModule {
-  id: string;
-  form_id: string;
-  // ... other fields
-}
-
 const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
   formId,
   formModuleId,
   onHeaderChange,
   layoutStyle = "default",
 }) => {
-  const [instance, setInstance] = useState<FormInstance>({
-    form_number: null, // Initialize as null to match database schema
+  const [instance, setInstance] = useState<Partial<FormInstance>>({
+    form_number: null,
     user_form_id: null,
     title: null,
-    form_date: new Date().toISOString().slice(0, 10), // Default to today
+    form_date: new Date().toISOString().slice(0, 10),
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingNumber, setIsGeneratingNumber] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Save instance data with useCallback to prevent debounce issues
-  const saveInstanceData = useCallback(
-    async (updatedInstance: FormInstance) => {
-      setIsSaving(true);
-      try {
-        // First get the form_id from the junction table
-        const { data: formModule, error: moduleError } = await supabase
-          .from("form_instance_modules")
-          .select("form_id")
-          .eq("id", formModuleId)
-          .single();
-
-        if (moduleError) throw moduleError;
-
-        // Then upsert using the correct form_id
-        const { error } = await supabase.from("form_instances").upsert({
-          id: formModule.form_id, // Critical for updates
-          form_number: updatedInstance.form_number,
-          user_form_id: updatedInstance.user_form_id,
-          title: updatedInstance.title,
-          form_date: updatedInstance.form_date,
-        });
-
-        if (error) throw error;
-        toast.success("Saved successfully!");
-      } catch (err) {
-        console.error("Save error:", err);
-        toast.error("Save failed");
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [formModuleId]
-  );
-
-  // Initialize debounced save with memoized callback
-  const debouncedSave = useDebouncedSave(saveInstanceData);
+  const { save: debouncedSave, saveStatus } = useDebouncedFormHeaderSave();
 
   // Combined initialization effect
   useEffect(() => {
@@ -104,7 +61,7 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
         const { data: formInstance, error: formError } = await supabase
           .from("form_instances")
           .select("*")
-          .eq("id", formModule.form_id) // Correct column
+          .eq("id", formModule.form_id)
           .single();
 
         if (formError) throw formError;
@@ -116,7 +73,10 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
             title: formInstance.title,
             form_date: formInstance.form_date,
           });
-        } else if ((formError as PostgrestError)?.code === "PGRST116") {
+        } else if (
+          formError &&
+          (formError as PostgrestError).code === "PGRST116"
+        ) {
           setIsGeneratingNumber(true);
           const formNumber = await generateFormNumber();
           const newInstance = {
@@ -125,7 +85,14 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
             title: null,
             form_date: new Date().toISOString().slice(0, 10),
           };
-          await saveInstanceData(newInstance);
+          await saveFormHeader({
+            formId: formModule.form_id,
+            formNumber,
+            userFormId: null,
+            title: null,
+            formDate: new Date().toISOString().slice(0, 10),
+          });
+          setInstance(newInstance);
         } else {
           throw formError;
         }
@@ -139,14 +106,20 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
     };
 
     init();
-  }, [formModuleId, saveInstanceData]);
+  }, [formModuleId]);
 
   // Check for user form ID conflicts
   const handleUserFormIdChange = async (value: string) => {
     const updatedInstance = { ...instance, user_form_id: value };
 
     // Save the change
-    await debouncedSave(updatedInstance);
+    debouncedSave({
+      formId,
+      formNumber: updatedInstance.form_number ?? null,
+      userFormId: value,
+      title: updatedInstance.title ?? null,
+      formDate: updatedInstance.form_date ?? null,
+    });
 
     // Check if ID is taken if there's a value
     if (value) {
@@ -180,7 +153,7 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
               }
               readOnly
               className="readonly"
-              disabled={isGeneratingNumber || isSaving}
+              disabled={isGeneratingNumber || saveStatus.isSaving}
             />
           </label>
         </div>
@@ -190,10 +163,10 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
             Your Stock/Form Number:
             <input
               type="text"
-              value={instance.user_form_id || ""}
+              value={instance.user_form_id ?? ""}
               onChange={(e) => handleUserFormIdChange(e.target.value)}
               placeholder="Optional reference number"
-              disabled={isGeneratingNumber || isSaving}
+              disabled={isGeneratingNumber || saveStatus.isSaving}
             />
           </label>
         </div>
@@ -203,12 +176,18 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
             Form Name:
             <input
               type="text"
-              value={String(instance.title ?? "")}
+              value={instance.title ?? ""}
               onChange={(e) =>
-                debouncedSave({ ...instance, title: e.target.value })
+                debouncedSave({
+                  formId,
+                  formNumber: instance.form_number ?? null,
+                  userFormId: instance.user_form_id ?? null,
+                  title: e.target.value,
+                  formDate: instance.form_date ?? null,
+                })
               }
               required
-              disabled={isGeneratingNumber || isSaving}
+              disabled={isGeneratingNumber || saveStatus.isSaving}
             />
           </label>
         </div>
@@ -218,21 +197,29 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
             Form Date:
             <input
               type="date"
-              value={instance.form_date || ""}
+              value={instance.form_date ?? ""}
               onChange={(e) => {
                 const val = e.target.value;
                 if (isValidISODate(val)) {
-                  debouncedSave({ ...instance, form_date: val });
+                  debouncedSave({
+                    formId,
+                    formNumber: instance.form_number ?? null,
+                    userFormId: instance.user_form_id ?? null,
+                    title: instance.title ?? null,
+                    formDate: val,
+                  });
                 } else {
                   toast.error("Invalid date format");
                 }
               }}
               required
-              disabled={isGeneratingNumber || isSaving}
+              disabled={isGeneratingNumber || saveStatus.isSaving}
             />
           </label>
         </div>
-        {isSaving && <div className="saving-indicator">Saving changes...</div>}
+        {saveStatus.isSaving && (
+          <div className="saving-indicator">Saving changes...</div>
+        )}
       </div>
     </section>
   );

@@ -10,6 +10,12 @@ import {
   SaveFormModuleDataParams,
 } from "../../types/formTypes";
 import { TABLES, FORM_DATA_ENTRIES } from "../../constants/database";
+import {
+  schemaMap,
+  saveFormModuleDataParamsSchema,
+} from "../../types/formValidationSchemas";
+import { z } from "zod";
+import { formatZodErrors, ValidationError } from "../../utils/validation";
 
 // Supported module keys for typed tables
 export type ModuleKey =
@@ -42,6 +48,12 @@ const tableMap: Record<ModuleKey, string> = {
   signatures: TABLES.formInstanceSignatures,
 };
 
+export interface SaveFormModuleDataResult {
+  success: boolean;
+  error?: string;
+  validationErrors?: ValidationError[];
+}
+
 export async function saveFormModuleData({
   formId,
   moduleKey,
@@ -49,41 +61,53 @@ export async function saveFormModuleData({
   moduleId,
   version,
   updated_at,
-}: SaveFormModuleDataParams): Promise<{ success: boolean; error?: string }> {
-  const table = tableMap[moduleKey] || TABLES.formDataEntries;
+}: SaveFormModuleDataParams): Promise<SaveFormModuleDataResult> {
+  // First validate the save parameters
+  const paramsResult = saveFormModuleDataParamsSchema.safeParse({
+    formId,
+    moduleKey,
+    data,
+    moduleId,
+    version,
+    updated_at,
+  });
+
+  if (!paramsResult.success) {
+    return {
+      success: false,
+      error: "Invalid save parameters",
+      validationErrors: formatZodErrors(paramsResult.error),
+    };
+  }
+
+  // Then validate the module data against its specific schema
+  const schema = schemaMap[moduleKey];
+  if (!schema) {
+    return {
+      success: false,
+      error: `No validation schema found for module key: ${moduleKey}`,
+    };
+  }
+
+  const dataResult = schema.safeParse(data);
+  if (!dataResult.success) {
+    return {
+      success: false,
+      error: "Invalid module data",
+      validationErrors: formatZodErrors(dataResult.error),
+    };
+  }
+
+  const table = tableMap[moduleKey];
+  if (!table) {
+    return {
+      success: false,
+      error: `Invalid module key: ${moduleKey}. No table mapping found.`,
+    };
+  }
+
   let payload: Record<string, any>;
   const now = new Date().toISOString();
-
-  // Handle generic module fallback
-  if (!tableMap[moduleKey]) {
-    if (!moduleId) {
-      return { success: false, error: "moduleId required for generic module" };
-    }
-    payload = {
-      [FORM_DATA_ENTRIES.formId]: formId,
-      [FORM_DATA_ENTRIES.moduleId]: moduleId,
-      [FORM_DATA_ENTRIES.data]: data,
-      created_at: now,
-      updated_at: now,
-    };
-    const { error } = await supabase.from(table).upsert(payload, {
-      onConflict: `${FORM_DATA_ENTRIES.formId},${FORM_DATA_ENTRIES.moduleId}`,
-    });
-    if (import.meta.env.DEV) {
-      if (error) {
-        console.error(
-          `[saveFormModuleData] Error in upsert to ${table}:`,
-          error.message
-        );
-      }
-      console.debug(`[saveFormModuleData] Saved to ${table}`, {
-        formId,
-        moduleKey,
-        payload,
-      });
-    }
-    return { success: !error, error: error?.message };
-  }
 
   // Handle array (bulk) upserts
   if (Array.isArray(data)) {

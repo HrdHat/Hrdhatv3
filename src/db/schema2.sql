@@ -116,6 +116,7 @@ CREATE TABLE IF NOT EXISTS form_instances (
     submitted_at timestamp with time zone,
     user_id uuid,
     form_date date,
+    updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
     CONSTRAINT fk_form_instances_company_id FOREIGN KEY (company_id) REFERENCES companies(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT fk_form_instances_project_id FOREIGN KEY (project_id) REFERENCES projects(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT fk_form_instances_user_id FOREIGN KEY (user_id) REFERENCES profiles(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
@@ -135,28 +136,6 @@ CREATE TABLE IF NOT EXISTS form_instance_modules (
     CONSTRAINT fk_form_instance_modules_module_id FOREIGN KEY (module_id) REFERENCES template_modules(id) ON UPDATE NO ACTION ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS form_instance_data (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    form_id uuid NOT NULL REFERENCES form_instances(id),
-    module_id uuid NOT NULL REFERENCES form_instance_modules(id),
-    data jsonb NOT NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
-    updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
-    CONSTRAINT fk_form_instance_data_form_id FOREIGN KEY (form_id) REFERENCES form_instances(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
-    CONSTRAINT fk_form_instance_data_module_id FOREIGN KEY (module_id) REFERENCES form_instance_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION
-);
-
-CREATE TABLE IF NOT EXISTS form_data_entries (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    form_id uuid NOT NULL,
-    module_id uuid NOT NULL,
-    data jsonb NOT NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
-    updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
-    CONSTRAINT fk_form_data_entries_form_id FOREIGN KEY (form_id) REFERENCES form_instances(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
-    CONSTRAINT fk_form_data_entries_module_id FOREIGN KEY (module_id) REFERENCES form_instance_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION
-);
-
 -- Last checked: 2024-03-19 - Matches live DB schema exactly
 CREATE TABLE IF NOT EXISTS form_instance_general_info (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -172,6 +151,7 @@ CREATE TABLE IF NOT EXISTS form_instance_general_info (
     start_time time without time zone,
     end_time time without time zone,
     created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
     CONSTRAINT fk_form_instance_general_info_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
@@ -200,6 +180,7 @@ CREATE TABLE IF NOT EXISTS form_instance_pre_job_checklist (
     know_designated_first_aid_attendant boolean,
     aware_of_site_notices_or_bulletins boolean,
     created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
     CONSTRAINT fk_form_instance_pre_job_checklist_form_id FOREIGN KEY (form_id) REFERENCES form_instances(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT fk_form_instance_pre_job_checklist_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
@@ -215,6 +196,7 @@ CREATE TABLE IF NOT EXISTS form_instance_hazards (
     control text NOT NULL,
     risk_level_after integer,
     created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
     CONSTRAINT fk_form_instance_hazards_form_id FOREIGN KEY (form_id) REFERENCES form_instances(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT fk_form_instance_hazards_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
@@ -233,6 +215,7 @@ CREATE TABLE IF NOT EXISTS form_instance_signatures (
     signed_by uuid,
     is_deleted boolean DEFAULT false,
     deleted_at timestamp with time zone,
+    updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
     CONSTRAINT fk_form_instance_signatures_form_id FOREIGN KEY (form_id) REFERENCES form_instances(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT fk_form_instance_signatures_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT fk_form_instance_signatures_signed_by FOREIGN KEY (signed_by) REFERENCES users(id) ON UPDATE NO ACTION ON DELETE NO ACTION
@@ -261,6 +244,7 @@ CREATE TABLE IF NOT EXISTS form_instance_ppe_platform (
     platform_swing_stage boolean,
     platform_hydro_lift boolean,
     created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
     CONSTRAINT fk_form_instance_ppe_platform_form_id FOREIGN KEY (form_id) REFERENCES form_instances(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT fk_form_instance_ppe_platform_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
@@ -290,6 +274,7 @@ CREATE TABLE IF NOT EXISTS form_asset_photos (
     photo_url text NOT NULL,
     description text,
     uploaded_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
     CONSTRAINT fk_form_asset_photos_form_id FOREIGN KEY (form_id) REFERENCES form_instances(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT fk_form_asset_photos_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
@@ -347,7 +332,6 @@ CREATE POLICY "Users can delete their own forms" ON form_instances
 -- Indexes and constraints
 CREATE INDEX IF NOT EXISTS idx_user_form_module_preferences_user_id ON user_form_module_preferences(user_id);
 CREATE INDEX IF NOT EXISTS idx_form_instance_modules_form_id ON form_instance_modules(form_id);
-CREATE INDEX IF NOT EXISTS idx_form_instance_data_form_id ON form_instance_data(form_id);
 CREATE INDEX IF NOT EXISTS idx_template_modules_name ON template_modules(name);
 
 -- BEGIN AUTO-GENERATED INDEXES/KEYS (from pasteqries.md)
@@ -387,16 +371,6 @@ CREATE INDEX IF NOT EXISTS idx_form_modules_form_id ON form_instance_modules(for
 -- form_instance_module_fields
 CREATE UNIQUE INDEX IF NOT EXISTS form_instance_module_fields_form_module_id_name_key ON form_instance_module_fields(form_module_id, name);
 CREATE UNIQUE INDEX IF NOT EXISTS form_instance_module_fields_pkey ON form_instance_module_fields(id);
-
--- form_instance_data
-CREATE UNIQUE INDEX IF NOT EXISTS form_instance_data_pkey ON form_instance_data(id);
-CREATE INDEX IF NOT EXISTS idx_form_instance_data_form_id ON form_instance_data(form_id);
-
--- form_data_entries
-CREATE UNIQUE INDEX IF NOT EXISTS form_data_entries_form_module_unique ON form_data_entries(form_id, module_id);
-CREATE UNIQUE INDEX IF NOT EXISTS form_data_pkey ON form_data_entries(id);
-CREATE INDEX IF NOT EXISTS idx_form_data_form_id ON form_data_entries(form_id);
-CREATE INDEX IF NOT EXISTS idx_form_data_module_id ON form_data_entries(module_id);
 
 -- form_instance_general_info
 CREATE UNIQUE INDEX IF NOT EXISTS form_instance_general_info_pkey ON form_instance_general_info(id);
@@ -464,3 +438,80 @@ VALUES
   ('3f7556b4-0f72-4cd6-894f-c7fdb3b10a7b', '9695b682-a8e0-484f-b388-87ba051d44e1', 5, true); -- signatures
 
 -- === END FINAL SCHEMA FIXES === 
+
+-- Add updated_at to instance data tables
+ALTER TABLE form_instances 
+ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now());
+
+ALTER TABLE form_instance_general_info 
+ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now());
+
+ALTER TABLE form_instance_pre_job_checklist 
+ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now());
+
+ALTER TABLE form_instance_hazards 
+ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now());
+
+ALTER TABLE form_instance_signatures 
+ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now());
+
+ALTER TABLE form_instance_ppe_platform 
+ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now());
+
+ALTER TABLE form_asset_photos 
+ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now());
+
+-- Timestamp triggers for audit compliance
+CREATE OR REPLACE FUNCTION update_timestamps()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Always set updated_at on update
+  IF TG_OP = 'UPDATE' THEN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+  END IF;
+  
+  -- Set created_at only on insert
+  IF TG_OP = 'INSERT' THEN
+    NEW.created_at = CURRENT_TIMESTAMP;
+    NEW.updated_at = CURRENT_TIMESTAMP;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Add triggers to all form-related tables
+CREATE TRIGGER set_timestamps_form_instances
+  BEFORE INSERT OR UPDATE ON form_instances
+  FOR EACH ROW
+  EXECUTE FUNCTION update_timestamps();
+
+CREATE TRIGGER set_timestamps_form_instance_general_info
+  BEFORE INSERT OR UPDATE ON form_instance_general_info
+  FOR EACH ROW
+  EXECUTE FUNCTION update_timestamps();
+
+CREATE TRIGGER set_timestamps_form_instance_pre_job_checklist
+  BEFORE INSERT OR UPDATE ON form_instance_pre_job_checklist
+  FOR EACH ROW
+  EXECUTE FUNCTION update_timestamps();
+
+CREATE TRIGGER set_timestamps_form_instance_ppe_platform
+  BEFORE INSERT OR UPDATE ON form_instance_ppe_platform
+  FOR EACH ROW
+  EXECUTE FUNCTION update_timestamps();
+
+CREATE TRIGGER set_timestamps_form_instance_hazards
+  BEFORE INSERT OR UPDATE ON form_instance_hazards
+  FOR EACH ROW
+  EXECUTE FUNCTION update_timestamps();
+
+CREATE TRIGGER set_timestamps_form_asset_photos
+  BEFORE INSERT OR UPDATE ON form_asset_photos
+  FOR EACH ROW
+  EXECUTE FUNCTION update_timestamps();
+
+CREATE TRIGGER set_timestamps_form_instance_signatures
+  BEFORE INSERT OR UPDATE ON form_instance_signatures
+  FOR EACH ROW
+  EXECUTE FUNCTION update_timestamps(); 

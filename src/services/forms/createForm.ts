@@ -1,42 +1,25 @@
 import { supabase } from "../../db/supabaseClient";
 import { TABLES, FORM_INSTANCE_FIELDS } from "../../constants/database";
-
-export interface FlraForm {
-  id: string;
-  userId: string;
-  companyId?: string;
-  projectId?: string;
-  title?: string;
-  description?: string;
-  status: "draft" | "submitted" | "archived";
-  createdAt: string;
-  submittedAt?: string | null;
-}
+import { FlraForm } from "../../types/formTypes";
+import { createFormSchema } from "../../types/formValidationSchemas";
+import { formatZodErrors, ValidationError } from "../../utils/validation";
 
 export interface CreateFormInput {
   userId?: string;
-  status?: "draft" | "submitted" | "archived";
-  companyId?: string;
-  projectId?: string;
-  title?: string;
+  companyId: string;
+  projectId: string;
+  title: string;
   description?: string;
+  status?: "draft" | "submitted" | "approved" | "rejected";
 }
 
-export interface SupabaseError {
-  message: string;
-  details?: string;
-}
-
-/**
- * Validates that a field exists in the FlraForm type
- */
-function validateFormField(field: keyof typeof FORM_INSTANCE_FIELDS): void {
-  const formFields = Object.keys(FORM_INSTANCE_FIELDS);
-  if (!formFields.includes(field)) {
-    throw new Error(
-      `Invalid form field: ${field}. Valid fields are: ${formFields.join(", ")}`
-    );
-  }
+export interface CreateFormResult {
+  form: FlraForm | null;
+  error?: {
+    message: string;
+    details?: string;
+  };
+  validationErrors?: ValidationError[];
 }
 
 export async function createForm({
@@ -46,26 +29,29 @@ export async function createForm({
   projectId,
   title,
   description,
-}: CreateFormInput): Promise<{
-  form: FlraForm | null;
-  error: SupabaseError | null;
-}> {
+}: CreateFormInput): Promise<CreateFormResult> {
   try {
-    // Validate all fields before database operations
-    validateFormField("userId");
-    validateFormField("companyId");
-    validateFormField("projectId");
-    validateFormField("title");
-    validateFormField("description");
-    validateFormField("status");
-    validateFormField("submittedAt");
+    // Validate input using Zod schema
+    const validationResult = createFormSchema.safeParse({
+      userId,
+      companyId,
+      projectId,
+      title,
+      description,
+      status,
+      submittedAt: status === "submitted" ? new Date().toISOString() : null,
+    });
+
+    if (!validationResult.success) {
+      return {
+        form: null,
+        error: { message: "Invalid form data" },
+        validationErrors: formatZodErrors(validationResult.error),
+      };
+    }
 
     // Get authenticated user if userId not provided
     if (!userId) {
-      console.log("Supabase Query:", {
-        operation: "auth.getUser",
-        fullQuery: { auth: { getUser: true } },
-      });
       const { data: userData, error: userError } =
         await supabase.auth.getUser();
       if (userError || !userData?.user) {
@@ -78,37 +64,6 @@ export async function createForm({
     }
 
     // Insert new form
-    console.log("Supabase Query:", {
-      table: TABLES.formInstances,
-      operation: "insert",
-      data: {
-        [FORM_INSTANCE_FIELDS.userId]: userId,
-        [FORM_INSTANCE_FIELDS.companyId]: companyId,
-        [FORM_INSTANCE_FIELDS.projectId]: projectId,
-        [FORM_INSTANCE_FIELDS.title]: title,
-        [FORM_INSTANCE_FIELDS.description]: description,
-        [FORM_INSTANCE_FIELDS.status]: status,
-        [FORM_INSTANCE_FIELDS.submittedAt]:
-          status === "submitted" ? new Date().toISOString() : null,
-      },
-      fullQuery: {
-        from: TABLES.formInstances,
-        insert: [
-          {
-            [FORM_INSTANCE_FIELDS.userId]: userId,
-            [FORM_INSTANCE_FIELDS.companyId]: companyId,
-            [FORM_INSTANCE_FIELDS.projectId]: projectId,
-            [FORM_INSTANCE_FIELDS.title]: title,
-            [FORM_INSTANCE_FIELDS.description]: description,
-            [FORM_INSTANCE_FIELDS.status]: status,
-            [FORM_INSTANCE_FIELDS.submittedAt]:
-              status === "submitted" ? new Date().toISOString() : null,
-          },
-        ],
-        select: true,
-        single: true,
-      },
-    });
     const { data, error } = await supabase
       .from(TABLES.formInstances)
       .insert([
@@ -133,22 +88,14 @@ export async function createForm({
       };
     }
 
-    // Runtime guard for returned data
-    if (!data || !data.id) {
-      return {
-        form: null,
-        error: { message: "Invalid form response from Supabase" },
-      };
-    }
-
-    return { form: data as FlraForm, error: null };
-  } catch (error) {
+    return { form: data };
+  } catch (error: any) {
+    console.error("Create form error:", error);
     return {
       form: null,
       error: {
-        message:
-          error instanceof Error ? error.message : "Unknown error occurred",
-        details: error instanceof Error ? error.stack : undefined,
+        message: "Failed to create form",
+        details: error.message,
       },
     };
   }

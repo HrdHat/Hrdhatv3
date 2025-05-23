@@ -9,6 +9,7 @@ export type FormStatus = (typeof FORM_STATUSES)[number];
 export type FormInstance = {
   id: string; // uuid, required
   form_number?: string | null; // text, nullable
+  user_form_id?: string | null; // text, nullable
   created_by?: string | null; // uuid, nullable
   status?: string | null; // text, nullable
   last_modified?: string | null; // timestamp with time zone, nullable
@@ -231,3 +232,15 @@ export function assertModuleKey(key: string): asserts key is ModuleKey {
     throw new Error(`Invalid module key: ${key}`);
   }
 }
+
+export type FlraForm = {
+  id: string;
+  userId: string;
+  companyId?: string;
+  projectId?: string;
+  title?: string;
+  description?: string;
+  status: "draft" | "submitted" | "approved" | "rejected";
+  createdAt: string;
+  submittedAt?: string | null;
+};

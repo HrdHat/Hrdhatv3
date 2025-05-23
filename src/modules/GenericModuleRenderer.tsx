@@ -1,13 +1,52 @@
+/**
+ * GenericModuleRenderer.tsx
+ * --------------------------
+ * Renders generic form modules from a normalized, validated Field definition.
+ *
+ * RULES:
+ * - Only normalized field types allowed (see FieldType union).
+ * - `required` must be set, and matches DB NOT NULL status.
+ * - `options` ONLY allowed for 'select' fields.
+ * - All fields must match Zod schema, DB, and renderers.
+ * - Aliases/legacy field types are forbidden in render logic.
+ * - Validation (min/max) must be defined if required by DB/Zod.
+ *
+ * If any of the above is violated, THROW an error—do NOT fallback.
+ *
+ *
+ * Future work: Implement a renderer for other fields types, like date, & time.
+ */
+
 import React, { useState } from "react";
 import { ModuleWithRenderer } from "../types/renderer.types";
 
+// Define allowed field types for clarity and safety
+type FieldType =
+  | "text"
+  | "boolean"
+  | "date"
+  | "time"
+  | "number"
+  | "textarea"
+  | "select";
+
+/**
+ * Field definition for dynamic form rendering.
+ * - type: must match UI and DB types.
+ * - label: user-friendly, matches Zod schema if present.
+ * - required: should match DB NOT NULL constraint.
+ * - options: only for "select" type.
+ * - default_value: initial value for the field.
+ * // To add min/max or other validation, extend this interface.
+ */
 interface Field {
   name: string;
   label: string;
-  type: string;
+  type: FieldType;
   required?: boolean;
   default_value?: any;
   options?: { label: string; value: string }[];
+  // validation?: { min?: number; max?: number }; // Uncomment to support min/max
 }
 
 interface GenericModuleRendererProps {
@@ -49,12 +88,20 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
 
   const renderInput = (field: Field) => {
     // Normalize type to lowercase and handle textarea/select aliases
-    const type =
-      field.type === "text_area"
-        ? "textarea"
-        : field.type === "dropdown"
-        ? "select"
-        : field.type ?? "";
+    let type: FieldType;
+    switch (field.type) {
+      case "text_area":
+        type = "textarea";
+        break;
+      case "dropdown":
+        type = "select";
+        break;
+      case "checkbox":
+        type = "boolean";
+        break;
+      default:
+        type = field.type as FieldType;
+    }
     const normalizedType = type.toLowerCase();
     const id = `field_${field.name}`;
     const errorId = `error_${field.name}`;

@@ -4,8 +4,8 @@ import {
   uploadSignatureToSupabase,
   SignatureMetadata,
 } from "../../services/forms/uploadSignatureToSupabase";
+import { getSignatureUrl } from "../../services/forms/getSignatureUrl";
 import { useAuth } from "../../session/AuthProvider";
-import { supabase } from "../../db/supabaseClient";
 import { STORAGE_BUCKETS } from "../../constants/storage";
 
 // Helper to get storage path for a signature
@@ -43,12 +43,9 @@ const SignaturesModule: React.FC<Props> = ({
     async function fetchUrls() {
       const urlMap: Record<string, string> = {};
       for (const sig of value) {
-        const storagePath = getSignatureStoragePath(formId, sig.id);
-        const { data, error } = await supabase.storage
-          .from(STORAGE_BUCKETS.signatures)
-          .createSignedUrl(storagePath, 3600);
-        if (data?.signedUrl && isMounted) {
-          urlMap[sig.id] = data.signedUrl;
+        const result = await getSignatureUrl(formId, sig.id);
+        if (result.success && result.url && isMounted) {
+          urlMap[sig.id] = result.url;
         }
       }
       if (isMounted) setSignedUrls(urlMap);
@@ -64,7 +61,7 @@ const SignaturesModule: React.FC<Props> = ({
     setLoading(true);
     setError(null);
     try {
-      const meta = await uploadSignatureToSupabase({
+      const result = await uploadSignatureToSupabase({
         formId,
         metadata: {
           id: user.id,
@@ -72,12 +69,19 @@ const SignaturesModule: React.FC<Props> = ({
           role: user.user_metadata?.role || "",
           timestamp: Date.now(),
           formId,
-          form_module_id: formModuleId,
         },
         blob,
+        shouldReplace: alreadySigned,
       });
+
+      if (!result.success) {
+        throw new Error(result.error?.message || "Failed to save signature");
+      }
+
       // Replace or add the user's signature in the list
-      const updated = value.filter((sig) => sig.id !== user.id).concat(meta);
+      const updated = value
+        .filter((sig) => sig.id !== user.id)
+        .concat(result.data!);
       onChange(updated);
     } catch (e: any) {
       setError(e.message || "Failed to save signature.");

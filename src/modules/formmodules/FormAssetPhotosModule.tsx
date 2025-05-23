@@ -1,7 +1,11 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FormAssetPhoto } from "../../types/formTypes";
 import { AddPhotosButton } from "../../components/shared/buttons/AddPhotosButton";
-import { uploadImageToFormModule } from "../../services/forms/uploadImageToFormModule";
+import {
+  uploadImageToFormModule,
+  getFormModulePhotos,
+} from "../../services/forms/uploadImageToFormModule";
+import { softDeletePhoto } from "../../services/forms/uploadPhotoToSupabase";
 
 type Props = {
   value: FormAssetPhoto[];
@@ -20,7 +24,19 @@ const FormAssetPhotosModule: React.FC<Props> = ({
   uploadedBy,
   layoutStyle = "default",
 }) => {
-  if (!value) return null;
+  const [photos, setPhotos] = useState<FormAssetPhoto[]>(value || []);
+
+  // Fetch photos on mount and when formId/formModuleId changes
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      const result = await getFormModulePhotos(formId, formModuleId);
+      if (result.data) {
+        setPhotos(result.data);
+        onChange(result.data);
+      }
+    };
+    fetchPhotos();
+  }, [formId, formModuleId, onChange]);
 
   const handleUploadSuccess = (result: {
     data: FormAssetPhoto | null;
@@ -30,7 +46,9 @@ const FormAssetPhotosModule: React.FC<Props> = ({
       console.error("Photo upload failed:", result.error);
       return;
     }
-    onChange([...value, result.data]);
+    const newPhotos = [...photos, result.data];
+    setPhotos(newPhotos);
+    onChange(newPhotos);
   };
 
   const handleUploadError = (error: Error) => {
@@ -38,14 +56,22 @@ const FormAssetPhotosModule: React.FC<Props> = ({
     // You might want to show a toast notification here
   };
 
-  const removePhoto = (idx: number) => {
-    onChange(value.filter((_, i) => i !== idx));
+  const removePhoto = async (photoId: string, idx: number) => {
+    const result = await softDeletePhoto(photoId);
+    if (result.success) {
+      const newPhotos = photos.filter((_, i) => i !== idx);
+      setPhotos(newPhotos);
+      onChange(newPhotos);
+    } else {
+      console.error("Failed to remove photo:", result.error);
+      // You might want to show a toast notification here
+    }
   };
 
   return (
     <div className={`space-y-4 ${layoutStyle === "tight" ? "p-2" : "p-4"}`}>
       <div className="flex flex-wrap gap-2">
-        {value.map((photo, idx) => (
+        {photos.map((photo, idx) => (
           <div key={photo.id} className="relative group">
             <img
               src={photo.photo_url}
@@ -53,7 +79,7 @@ const FormAssetPhotosModule: React.FC<Props> = ({
               className="w-24 h-24 object-cover rounded-lg"
             />
             <button
-              onClick={() => removePhoto(idx)}
+              onClick={() => removePhoto(photo.id, idx)}
               className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               ×
