@@ -515,3 +515,73 @@ CREATE TRIGGER set_timestamps_form_instance_signatures
   BEFORE INSERT OR UPDATE ON form_instance_signatures
   FOR EACH ROW
   EXECUTE FUNCTION update_timestamps(); 
+
+-- === FLRA MODULE RLS POLICIES (MATCHES LIVE DB as of 2024-06-XX) ===
+
+-- form_asset_photos (FK: form_id)
+ALTER TABLE public.form_asset_photos ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS rls_form_asset_photos_select  ON public.form_asset_photos;
+DROP POLICY IF EXISTS rls_form_asset_photos_insert  ON public.form_asset_photos;
+DROP POLICY IF EXISTS rls_form_asset_photos_update  ON public.form_asset_photos;
+DROP POLICY IF EXISTS rls_form_asset_photos_delete  ON public.form_asset_photos;
+CREATE POLICY rls_form_asset_photos_select ON public.form_asset_photos FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM form_instances fi WHERE fi.id = form_asset_photos.form_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_asset_photos_insert ON public.form_asset_photos FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM form_instances fi WHERE fi.id = form_asset_photos.form_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_asset_photos_update ON public.form_asset_photos FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM form_instances fi WHERE fi.id = form_asset_photos.form_id AND fi.created_by = auth.uid())) WITH CHECK (EXISTS (SELECT 1 FROM form_instances fi WHERE fi.id = form_asset_photos.form_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_asset_photos_delete ON public.form_asset_photos FOR DELETE TO authenticated USING (EXISTS (SELECT 1 FROM form_instances fi WHERE fi.id = form_asset_photos.form_id AND fi.created_by = auth.uid()));
+
+-- form_instance_general_info (FK: form_module_id)
+ALTER TABLE public.form_instance_general_info ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS rls_form_instance_general_info_select  ON public.form_instance_general_info;
+DROP POLICY IF EXISTS rls_form_instance_general_info_insert  ON public.form_instance_general_info;
+DROP POLICY IF EXISTS rls_form_instance_general_info_update  ON public.form_instance_general_info;
+DROP POLICY IF EXISTS rls_form_instance_general_info_delete  ON public.form_instance_general_info;
+CREATE POLICY rls_form_instance_general_info_select ON public.form_instance_general_info FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_general_info.form_module_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_general_info_insert ON public.form_instance_general_info FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_general_info.form_module_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_general_info_update ON public.form_instance_general_info FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_general_info.form_module_id AND fi.created_by = auth.uid())) WITH CHECK (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_general_info.form_module_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_general_info_delete ON public.form_instance_general_info FOR DELETE TO authenticated USING (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_general_info.form_module_id AND fi.created_by = auth.uid()));
+
+-- form_instance_hazards (FK: form_module_id)
+ALTER TABLE public.form_instance_hazards ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS rls_form_instance_hazards_select  ON public.form_instance_hazards;
+DROP POLICY IF EXISTS rls_form_instance_hazards_insert  ON public.form_instance_hazards;
+DROP POLICY IF EXISTS rls_form_instance_hazards_update  ON public.form_instance_hazards;
+DROP POLICY IF EXISTS rls_form_instance_hazards_delete  ON public.form_instance_hazards;
+CREATE POLICY rls_form_instance_hazards_select ON public.form_instance_hazards FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_hazards.form_module_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_hazards_insert ON public.form_instance_hazards FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_hazards.form_module_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_hazards_update ON public.form_instance_hazards FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_hazards.form_module_id AND fi.created_by = auth.uid())) WITH CHECK (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_hazards.form_module_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_hazards_delete ON public.form_instance_hazards FOR DELETE TO authenticated USING (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_hazards.form_module_id AND fi.created_by = auth.uid()));
+
+-- form_instance_ppe_platform (FK: form_module_id)
+ALTER TABLE public.form_instance_ppe_platform ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS rls_form_instance_ppe_platform_select  ON public.form_instance_ppe_platform;
+DROP POLICY IF EXISTS rls_form_instance_ppe_platform_insert  ON public.form_instance_ppe_platform;
+DROP POLICY IF EXISTS rls_form_instance_ppe_platform_update  ON public.form_instance_ppe_platform;
+DROP POLICY IF EXISTS rls_form_instance_ppe_platform_delete  ON public.form_instance_ppe_platform;
+CREATE POLICY rls_form_instance_ppe_platform_select ON public.form_instance_ppe_platform FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_ppe_platform.form_module_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_ppe_platform_insert ON public.form_instance_ppe_platform FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_ppe_platform.form_module_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_ppe_platform_update ON public.form_instance_ppe_platform FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_ppe_platform.form_module_id AND fi.created_by = auth.uid())) WITH CHECK (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_ppe_platform.form_module_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_ppe_platform_delete ON public.form_instance_ppe_platform FOR DELETE TO authenticated USING (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_ppe_platform.form_module_id AND fi.created_by = auth.uid()));
+
+-- form_instance_pre_job_checklist (FK: form_module_id)
+ALTER TABLE public.form_instance_pre_job_checklist ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS rls_form_instance_pre_job_checklist_select  ON public.form_instance_pre_job_checklist;
+DROP POLICY IF EXISTS rls_form_instance_pre_job_checklist_insert  ON public.form_instance_pre_job_checklist;
+DROP POLICY IF EXISTS rls_form_instance_pre_job_checklist_update  ON public.form_instance_pre_job_checklist;
+DROP POLICY IF EXISTS rls_form_instance_pre_job_checklist_delete  ON public.form_instance_pre_job_checklist;
+CREATE POLICY rls_form_instance_pre_job_checklist_select ON public.form_instance_pre_job_checklist FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_pre_job_checklist.form_module_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_pre_job_checklist_insert ON public.form_instance_pre_job_checklist FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_pre_job_checklist.form_module_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_pre_job_checklist_update ON public.form_instance_pre_job_checklist FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_pre_job_checklist.form_module_id AND fi.created_by = auth.uid())) WITH CHECK (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_pre_job_checklist.form_module_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_pre_job_checklist_delete ON public.form_instance_pre_job_checklist FOR DELETE TO authenticated USING (EXISTS (SELECT 1 FROM form_instance_modules fim JOIN form_instances fi ON (fi.id = fim.form_id) WHERE fim.id = form_instance_pre_job_checklist.form_module_id AND fi.created_by = auth.uid()));
+
+-- form_instance_signatures (FK: form_id)
+ALTER TABLE public.form_instance_signatures ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS rls_form_instance_signatures_select  ON public.form_instance_signatures;
+DROP POLICY IF EXISTS rls_form_instance_signatures_insert  ON public.form_instance_signatures;
+DROP POLICY IF EXISTS rls_form_instance_signatures_update  ON public.form_instance_signatures;
+DROP POLICY IF EXISTS rls_form_instance_signatures_delete  ON public.form_instance_signatures;
+CREATE POLICY rls_form_instance_signatures_select ON public.form_instance_signatures FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM form_instances fi WHERE fi.id = form_instance_signatures.form_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_signatures_insert ON public.form_instance_signatures FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM form_instances fi WHERE fi.id = form_instance_signatures.form_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_signatures_update ON public.form_instance_signatures FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM form_instances fi WHERE fi.id = form_instance_signatures.form_id AND fi.created_by = auth.uid())) WITH CHECK (EXISTS (SELECT 1 FROM form_instances fi WHERE fi.id = form_instance_signatures.form_id AND fi.created_by = auth.uid()));
+CREATE POLICY rls_form_instance_signatures_delete ON public.form_instance_signatures FOR DELETE TO authenticated USING (EXISTS (SELECT 1 FROM form_instances fi WHERE fi.id = form_instance_signatures.form_id AND fi.created_by = auth.uid()));
+
+-- All policies match the live DB as of 2024-06-XX. 
