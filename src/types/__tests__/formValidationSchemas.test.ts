@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   schemaMap,
-  moduleFieldSchema,
   validateModuleData,
   validateFieldDefinition,
   moduleFieldSchemaStrict,
@@ -13,7 +12,7 @@ import { saveFormModuleDataParamsSchema } from "../formValidationSchemas";
 import { formatZodErrors } from "../../utils/validation";
 
 // Example valid payloads for each module
-const validPayloads: Record<ModuleKey, unknown> = {
+const validPayloads: Record<ModuleKey, any> = {
   header: {
     id: "123e4567-e89b-12d3-a456-426614174000",
     form_number: "FLRA-2024-001",
@@ -96,39 +95,45 @@ const validPayloads: Record<ModuleKey, unknown> = {
     platform_hydro_lift: false,
     created_at: "2024-03-20T12:00:00Z",
   },
-  taskHazards: {
-    id: "123e4567-e89b-12d3-a456-426614174013",
-    form_id: "123e4567-e89b-12d3-a456-426614174014",
-    form_module_id: "123e4567-e89b-12d3-a456-426614174015",
-    task: "Test Task",
-    hazard: "Test Hazard",
-    risk_level_before: 3,
-    control: "Test Control",
-    risk_level_after: 1,
-    created_at: "2024-03-20T12:00:00Z",
-  },
-  photos: {
-    id: "123e4567-e89b-12d3-a456-426614174016",
-    form_id: "123e4567-e89b-12d3-a456-426614174017",
-    form_module_id: "123e4567-e89b-12d3-a456-426614174018",
-    photo_url: "https://example.com/photo.jpg",
-    description: "Test photo",
-    uploaded_at: "2024-03-20T12:00:00Z",
-  },
-  signatures: {
-    id: "123e4567-e89b-12d3-a456-426614174019",
-    form_id: "123e4567-e89b-12d3-a456-426614174020",
-    form_module_id: "123e4567-e89b-12d3-a456-426614174021",
-    worker_name: "John Doe",
-    signature_url: "https://example.com/signature.jpg",
-    signed_at: "2024-03-20T12:00:00Z",
-    signature_hash: null,
-    role: "Supervisor",
-    metadata: null,
-    signed_by: "123e4567-e89b-12d3-a456-426614174022",
-    is_deleted: false,
-    deleted_at: null,
-  },
+  taskHazards: [
+    {
+      id: "123e4567-e89b-12d3-a456-426614174013",
+      form_id: "123e4567-e89b-12d3-a456-426614174014",
+      form_module_id: "123e4567-e89b-12d3-a456-426614174015",
+      task: "Test Task",
+      hazard: "Test Hazard",
+      risk_level_before: 3,
+      control: "Test Control",
+      risk_level_after: 1,
+      created_at: "2024-03-20T12:00:00Z",
+    },
+  ],
+  photos: [
+    {
+      id: "123e4567-e89b-12d3-a456-426614174016",
+      form_id: "123e4567-e89b-12d3-a456-426614174017",
+      form_module_id: "123e4567-e89b-12d3-a456-426614174018",
+      photo_url: "https://example.com/photo.jpg",
+      description: "Test photo",
+      uploaded_at: "2024-03-20T12:00:00Z",
+    },
+  ],
+  signatures: [
+    {
+      id: "123e4567-e89b-12d3-a456-426614174019",
+      form_id: "123e4567-e89b-12d3-a456-426614174020",
+      form_module_id: "123e4567-e89b-12d3-a456-426614174021",
+      worker_name: "John Doe",
+      signature_url: "https://example.com/signature.jpg",
+      signed_at: "2024-03-20T12:00:00Z",
+      signature_hash: null,
+      role: "Supervisor",
+      metadata: null,
+      signed_by: "123e4567-e89b-12d3-a456-426614174022",
+      is_deleted: false,
+      deleted_at: null,
+    },
+  ],
 };
 
 // Example valid field definitions
@@ -197,7 +202,7 @@ describe("Form Validation Schemas", () => {
       created_at: "invalid-date",
     };
 
-    const result = validateModuleData("taskHazards", invalidData);
+    const result = validateModuleData("taskHazards", [invalidData]);
     expect(result.success).toBe(false);
     if (!result.success) {
       // Zod will report all issues for a plain object schema
@@ -365,18 +370,26 @@ describe("Form Validation Schemas", () => {
     it("validates array data for task hazards", () => {
       const result = schemaMap.taskHazards.safeParse([
         {
+          id: "123e4567-e89b-12d3-a456-426614174000",
+          form_id: "123e4567-e89b-12d3-a456-426614174001",
+          form_module_id: "123e4567-e89b-12d3-a456-426614174002",
           task: "Task 1",
           hazard: "Hazard 1",
           risk_level_before: 3,
           control: "Control 1",
           risk_level_after: 2,
+          created_at: "2024-03-20T12:00:00Z",
         },
         {
+          id: "123e4567-e89b-12d3-a456-426614174003",
+          form_id: "123e4567-e89b-12d3-a456-426614174004",
+          form_module_id: "123e4567-e89b-12d3-a456-426614174005",
           task: "Task 2",
           hazard: "Hazard 2",
           risk_level_before: 4,
           control: "Control 2",
           risk_level_after: 1,
+          created_at: "2024-03-20T12:00:00Z",
         },
       ]);
       expect(result.success).toBe(true);
@@ -399,14 +412,22 @@ describe("Form Validation Schemas", () => {
     it("formats array field errors correctly", () => {
       const result = schemaMap.taskHazards.safeParse([
         {
-          task: "",
-          hazard: "",
-          risk_level_before: 6,
+          id: "123e4567-e89b-12d3-a456-426614174000",
+          form_id: "123e4567-e89b-12d3-a456-426614174001",
+          form_module_id: "123e4567-e89b-12d3-a456-426614174002",
+          task: "", // Will fail - required field empty
+          hazard: "", // Will fail - required field empty
+          risk_level_before: 6, // Will fail - out of range (1-5)
+          control: "Valid control measure", // Valid
+          risk_level_after: 2, // Valid
+          created_at: "2024-03-20T12:00:00Z", // Valid
         },
       ]);
       expect(result.success).toBe(false);
       if (!result.success) {
-        const errors = formatZodErrors(result.error);
+        const errors = formatZodErrors(result.error, "taskHazards");
+        // Should have exactly 3 errors in predictable order
+        expect(errors).toHaveLength(3);
         expect(errors[0].userField).toBe("Task #1");
         expect(errors[1].userField).toBe("Hazard #1");
         expect(errors[2].userField).toBe("Initial Risk Level #1");
@@ -415,14 +436,27 @@ describe("Form Validation Schemas", () => {
 
     it("formats date/time errors correctly", () => {
       const result = schemaMap.general.safeParse({
+        id: "123e4567-e89b-12d3-a456-426614174000",
+        form_module_id: null,
+        project_name: "Test Project",
+        project_address: null,
+        task_location: null,
+        supervisor_name: null,
+        supervisor_contact: null,
         date: "invalid",
+        crew_members_count: null,
+        task_description: null,
         start_time: "25:00",
+        end_time: null,
+        created_at: "2024-03-20T12:00:00Z",
       });
       expect(result.success).toBe(false);
       if (!result.success) {
         const errors = formatZodErrors(result.error);
-        expect(errors[0].message).toContain("valid date");
-        expect(errors[1].message).toContain("valid time");
+        const dateError = errors.find((e) => e.field === "date");
+        const timeError = errors.find((e) => e.field === "start_time");
+        expect(dateError?.message).toContain("valid date");
+        expect(timeError?.message).toContain("valid time");
       }
     });
   });
@@ -535,24 +569,25 @@ describe("Field Definition Validation", () => {
 
 describe("Array Module Validation", () => {
   it("validates taskHazards array", () => {
-    const result = validateModuleData("taskHazards", [
-      validPayloads.taskHazards,
-    ]);
+    const result = validateModuleData("taskHazards", validPayloads.taskHazards);
     expect(result.success).toBe(true);
   });
 
   it("validates photos array", () => {
-    const result = validateModuleData("photos", [validPayloads.photos]);
+    const result = validateModuleData("photos", validPayloads.photos);
     expect(result.success).toBe(true);
   });
 
   it("validates signatures array", () => {
-    const result = validateModuleData("signatures", [validPayloads.signatures]);
+    const result = validateModuleData("signatures", validPayloads.signatures);
     expect(result.success).toBe(true);
   });
 
   it("rejects single taskHazard object", () => {
-    const result = validateModuleData("taskHazards", validPayloads.taskHazards);
+    const result = validateModuleData(
+      "taskHazards",
+      (validPayloads.taskHazards as any[])[0]
+    );
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues[0].message).toBe(
@@ -562,7 +597,7 @@ describe("Array Module Validation", () => {
   });
 
   it("rejects single photo object", () => {
-    const result = validateModuleData("photos", validPayloads.photos);
+    const result = validateModuleData("photos", validPayloads.photos[0]);
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues[0].message).toBe(
@@ -572,7 +607,10 @@ describe("Array Module Validation", () => {
   });
 
   it("rejects single signature object", () => {
-    const result = validateModuleData("signatures", validPayloads.signatures);
+    const result = validateModuleData(
+      "signatures",
+      validPayloads.signatures[0]
+    );
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues[0].message).toBe(
@@ -589,9 +627,9 @@ describe("Array Module Validation", () => {
 
   it("validates arrays with multiple items", () => {
     const multipleHazards = [
-      validPayloads.taskHazards,
+      validPayloads.taskHazards[0],
       {
-        ...validPayloads.taskHazards,
+        ...validPayloads.taskHazards[0],
         id: "123e4567-e89b-12d3-a456-426614174023",
         task: "Another Task",
         hazard: "Another Hazard",

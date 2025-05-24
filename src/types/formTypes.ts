@@ -13,7 +13,7 @@ export type FormInstance = {
   created_by?: string | null; // uuid, nullable
   status?: string | null; // text, nullable
   last_modified?: string | null; // timestamp with time zone, nullable
-  created_at: string; // timestamp with time zone, required
+  created_at?: string; // timestamp with time zone, optional (handled by DB trigger)
   auto_archived?: boolean | null; // boolean, nullable
   data?: Record<string, unknown> | null; // jsonb, nullable
   company_id?: string | null; // uuid, nullable
@@ -81,6 +81,20 @@ export type TaskHazardControl = {
   created_at: string; // timestamp with time zone, required
 };
 
+/**
+ * FormAssetPhoto Type
+ *
+ * NOTE: This type is intentionally minimal as it represents the core fields needed for UI rendering.
+ * The full database schema (including soft-delete fields) is handled by:
+ * 1. Database constants in database.ts
+ * 2. Validation schemas in formValidationSchemas.ts
+ * 3. Query filters in getPhotosForModule (isDeleted: false)
+ *
+ * This separation ensures:
+ * - UI components only receive necessary fields
+ * - Database operations maintain full schema compliance
+ * - Soft-delete filtering happens at the query level
+ */
 export type FormAssetPhoto = {
   id: string; // uuid, required
   form_id: string; // uuid, required

@@ -3,7 +3,7 @@ import {
   formModuleFieldSchema,
 } from "../../../types/formValidationSchemas";
 import { z } from "zod";
-import { describe, expect, it } from "@jest/globals";
+import { describe, it, expect, vi } from "vitest";
 
 describe("Form Validation Schemas", () => {
   describe("createFormSchema", () => {
@@ -34,7 +34,8 @@ describe("Form Validation Schemas", () => {
       const result = createFormSchema.safeParse(invalidPayload);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors).toHaveLength(3); // Invalid UUID, empty title, invalid status
+        // Now expecting 4 errors: Invalid UUID, empty title, invalid status, and missing submittedAt
+        expect(result.error.errors).toHaveLength(4);
       }
     });
   });
@@ -71,7 +72,8 @@ describe("Form Validation Schemas", () => {
       const result = formModuleFieldSchema.safeParse(invalidPayload);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors).toHaveLength(5); // Invalid UUID, invalid name format, empty label, invalid type, negative order
+        // Now expecting 7 errors: Invalid UUID, invalid name format, empty label, invalid type, negative order, missing required, missing version
+        expect(result.error.errors).toHaveLength(7);
       }
     });
   });

@@ -9,6 +9,16 @@ import {
   FormAssetPhotoResult,
   FormAssetPhotoListResult,
 } from "../../types/formTypes";
+import {
+  uploadPhotoToSupabase,
+  uploadMultiplePhotos,
+  getPhotosForModule,
+} from "./uploadPhotoToSupabase";
+import {
+  PhotoMetadata,
+  PhotoRecord,
+  PhotoOperationResult,
+} from "./photoValidation";
 
 /**
  * This service bypasses saveFormModuleData because it handles specialized file operations:
@@ -22,17 +32,6 @@ import {
  * just one step in this process.
  */
 
-// Allowed file types
-const ALLOWED_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-] as const;
-
-// Max file size (5MB)
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
 interface UploadOptions {
   formId: string;
   formModuleId: string;
@@ -44,19 +43,9 @@ interface UploadOptions {
 }
 
 /**
- * Validates that a field exists in the FormAssetPhoto type
+ * Uploads a single photo to a form module using the validated uploadPhotoToSupabase service.
+ * This is a strict wrapper that ensures all uploads go through the Zod-validated service.
  */
-function validatePhotoField(field: string): void {
-  const photoFields = Object.keys(FORM_ASSET_PHOTOS);
-  if (!photoFields.includes(field)) {
-    throw new Error(
-      `Invalid photo field: ${field}. Valid fields are: ${photoFields.join(
-        ", "
-      )}`
-    );
-  }
-}
-
 export async function uploadImageToFormModule({
   formId,
   formModuleId,
@@ -66,129 +55,134 @@ export async function uploadImageToFormModule({
   description,
   source = "web",
 }: UploadOptions): Promise<FormAssetPhotoResult> {
-  // Validate all fields before database operations
-  validatePhotoField(FORM_ASSET_PHOTOS.formId);
-  validatePhotoField(FORM_ASSET_PHOTOS.formModuleId);
-  validatePhotoField(FORM_ASSET_PHOTOS.photoUrl);
-  validatePhotoField(FORM_ASSET_PHOTOS.description);
-  validatePhotoField(FORM_ASSET_PHOTOS.uploadedAt);
-  validatePhotoField(FORM_ASSET_PHOTOS.uploadedBy);
-  validatePhotoField(FORM_ASSET_PHOTOS.isDeleted);
-  validatePhotoField(FORM_ASSET_PHOTOS.tag);
-  validatePhotoField(FORM_ASSET_PHOTOS.source);
+  // Use uploadPhotoToSupabase for proper validation and upload
+  const result = await uploadPhotoToSupabase({
+    file,
+    formId,
+    moduleId: formModuleId,
+    uploadedBy,
+    metadata: {
+      id: crypto.randomUUID(),
+      formId,
+      moduleId: formModuleId,
+      type: file.type,
+      name: file.name,
+      size: file.size,
+      timestamp: Date.now(),
+    },
+  });
 
-  // 1. Validate file
-  if (!ALLOWED_TYPES.includes(file.type as (typeof ALLOWED_TYPES)[number])) {
+  if (!result.success || !result.data) {
     return {
       data: null,
-      error: new Error(
-        `Invalid file type. Allowed types: ${ALLOWED_TYPES.join(", ")}`
-      ),
+      error: new Error(result.error?.message || "Unknown error"),
     };
   }
 
-  if (file.size > MAX_FILE_SIZE) {
-    return {
-      data: null,
-      error: new Error(
-        `File too large. Max allowed: ${MAX_FILE_SIZE / (1024 * 1024)}MB`
-      ),
-    };
-  }
-
-  if (file.size <= 0) {
-    return {
-      data: null,
-      error: new Error("File size must be greater than 0"),
-    };
-  }
-
-  // 2. Generate safe storage path
-  const timestamp = Date.now();
-  const safeFileName = `${timestamp}_${file.name.replace(
-    /[^a-zA-Z0-9.-]/g,
-    "_"
-  )}`;
-  const storagePath = `${formId}/photos/${safeFileName}`;
-
-  // 3. Upload to storage
-  const { error: uploadError } = await supabase.storage
-    .from(STORAGE_BUCKETS.formUploads)
-    .upload(storagePath, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
-
-  if (uploadError) {
-    console.error("Storage upload error:", uploadError);
-    return {
-      data: null,
-      error: new Error(`Failed to upload image: ${uploadError.message}`),
-    };
-  }
-
-  // 4. Get image URL
-  const { data: urlData } = await supabase.storage
-    .from(STORAGE_BUCKETS.formUploads)
-    .getPublicUrl(storagePath);
-
-  if (!urlData?.publicUrl) {
-    return {
-      data: null,
-      error: new Error("Failed to get image URL"),
-    };
-  }
-
-  // 5. Insert metadata
-  const { data, error: insertError } = await supabase
-    .from(TABLES.formAssetPhotos)
-    .insert([
-      {
-        [FORM_ASSET_PHOTOS.formId]: formId,
-        [FORM_ASSET_PHOTOS.formModuleId]: formModuleId,
-        [FORM_ASSET_PHOTOS.photoUrl]: urlData.publicUrl,
-        [FORM_ASSET_PHOTOS.description]: description,
-        [FORM_ASSET_PHOTOS.uploadedAt]: new Date().toISOString(),
-        [FORM_ASSET_PHOTOS.uploadedBy]: uploadedBy,
-        [FORM_ASSET_PHOTOS.isDeleted]: false,
-        [FORM_ASSET_PHOTOS.deletedAt]: null,
-        [FORM_ASSET_PHOTOS.tag]: tag,
-        [FORM_ASSET_PHOTOS.source]: source,
-      },
-    ])
-    .select()
-    .single();
-
-  if (insertError) {
-    return {
-      data: null,
-      error: new Error(`Failed to save photo metadata: ${insertError.message}`),
-    };
-  }
+  // Map the result to FormAssetPhoto type (snake_case for database)
+  const photoData: FormAssetPhoto = {
+    id: result.data.id,
+    form_id: result.data.formId,
+    form_module_id: result.data.moduleId,
+    photo_url: result.data.photoUrl,
+    uploaded_at: result.data.uploadedAt,
+    description: description || null,
+  };
 
   return {
-    data: data as FormAssetPhoto,
+    data: photoData,
     error: null,
   };
 }
 
 /**
- * Fetches photos for a form module, excluding soft-deleted photos
+ * Uploads multiple photos to a form module using the validated uploadMultiplePhotos service.
+ * This is a strict wrapper that ensures all batch uploads go through the Zod-validated service.
+ */
+export async function uploadMultipleImagesToFormModule(
+  uploads: UploadOptions[]
+): Promise<FormAssetPhotoListResult> {
+  const result = await uploadMultiplePhotos(
+    uploads.map((upload) => ({
+      file: upload.file,
+      formId: upload.formId,
+      moduleId: upload.formModuleId,
+      uploadedBy: upload.uploadedBy,
+      metadata: {
+        id: crypto.randomUUID(),
+        formId: upload.formId,
+        moduleId: upload.formModuleId,
+        type: upload.file.type,
+        name: upload.file.name,
+        size: upload.file.size,
+        timestamp: Date.now(),
+      },
+    }))
+  );
+
+  // Map successful results to FormAssetPhoto type (snake_case for database)
+  const photos = result.results
+    .filter((r) => r.result.success && r.result.data)
+    .map((r) => {
+      const photo = r.result.data as PhotoRecord;
+      return {
+        id: photo.id,
+        form_id: photo.formId,
+        form_module_id: photo.moduleId,
+        photo_url: photo.photoUrl,
+        uploaded_at: photo.uploadedAt,
+        description: uploads[r.index].description || null,
+      };
+    });
+
+  return {
+    data: photos,
+    error: result.errors?.length
+      ? new Error(result.errors[0].error.message)
+      : null,
+  };
+}
+
+/**
+ * Fetches photos for a form module using the validated service.
+ * This is a strict wrapper that ensures all queries go through the validated service.
  */
 export async function getFormModulePhotos(
   formId: string,
   formModuleId: string
 ): Promise<FormAssetPhotoListResult> {
-  const { data, error } = await supabase
-    .from(TABLES.formAssetPhotos)
-    .select()
-    .eq(FORM_ASSET_PHOTOS.formId, formId)
-    .eq(FORM_ASSET_PHOTOS.formModuleId, formModuleId)
-    .is(FORM_ASSET_PHOTOS.isDeleted, false) // Always exclude soft-deleted photos
-    .order(FORM_ASSET_PHOTOS.uploadedAt, { ascending: false });
+  const result = await getPhotosForModule(formId, formModuleId);
+
+  if (!result.success || !result.data) {
+    return {
+      data: [],
+      error: new Error(result.error?.message || "Failed to fetch photos"),
+    };
+  }
+
+  // Map the result to FormAssetPhoto type (snake_case for database)
+  const photos: FormAssetPhoto[] = Array.isArray(result.data)
+    ? result.data.map((photo) => ({
+        id: photo.id,
+        form_id: photo.formId,
+        form_module_id: photo.moduleId,
+        photo_url: photo.photoUrl,
+        uploaded_at: photo.uploadedAt,
+        description: null, // Description is not part of the core photo data
+      }))
+    : [
+        {
+          id: result.data.id,
+          form_id: result.data.formId,
+          form_module_id: result.data.moduleId,
+          photo_url: result.data.photoUrl,
+          uploaded_at: result.data.uploadedAt,
+          description: null, // Description is not part of the core photo data
+        },
+      ];
 
   return {
-    data: data as FormAssetPhoto[],
-    error: error ? new Error(error.message) : null,
+    data: photos,
+    error: null,
   };
 }

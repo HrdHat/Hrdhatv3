@@ -229,15 +229,12 @@ export async function saveFields(req: Request) {
       const isNew = !existingRecord;
 
       // Prepare row data with form reference and timestamps
-      const now = new Date().toISOString();
       const rowData = {
         ...validatedData,
         ...(moduleKey === "header"
           ? { id: formId }
           : { form_instance_id: formId }),
         version: (version || 0) + 1,
-        updated_at: now,
-        ...(isNew ? { created_at: now } : {}),
       };
 
       const { error } = await supabase.from(table).upsert(rowData);
@@ -248,7 +245,6 @@ export async function saveFields(req: Request) {
         JSON.stringify({
           success: true,
           version: rowData.version,
-          updated_at: now,
         }),
         { status: 200 }
       );

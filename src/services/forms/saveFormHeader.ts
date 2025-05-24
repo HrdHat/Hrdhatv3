@@ -56,8 +56,6 @@ export async function saveFormHeader({
       };
     }
 
-    const now = new Date().toISOString();
-
     // Use saveFormModuleData for the actual save operation
     const result = await saveFormModuleData({
       formId,
@@ -68,7 +66,6 @@ export async function saveFormHeader({
         user_form_id: userFormId,
         title,
         form_date: formDate,
-        created_at: now,
         version: 1, // Start with version 1 if not provided
       },
     });

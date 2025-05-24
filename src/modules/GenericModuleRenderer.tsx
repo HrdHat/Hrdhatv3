@@ -19,6 +19,7 @@
 
 import React, { useState } from "react";
 import { ModuleWithRenderer } from "../types/renderer.types";
+import { useValidation } from "../contexts/ValidationContext";
 
 // Define allowed field types for clarity and safety
 type FieldType =
@@ -60,6 +61,8 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
   onDataChange,
   layoutStyle = "default",
 }) => {
+  const { hasFieldError, getFieldErrors } = useValidation();
+
   // Initialize state with default values
   const initialValues = Object.fromEntries(
     (module.fields || []).map((field: Field) => [
@@ -86,27 +89,16 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
   const showError = (field: Field) =>
     touched[field.name] && isFieldEmpty(field);
 
-  const renderInput = (field: Field) => {
-    // Normalize type to lowercase and handle textarea/select aliases
-    let type: FieldType;
-    switch (field.type) {
-      case "text_area":
-        type = "textarea";
-        break;
-      case "dropdown":
-        type = "select";
-        break;
-      case "checkbox":
-        type = "boolean";
-        break;
-      default:
-        type = field.type as FieldType;
-    }
+    const renderInput = (field: Field) => {    /**     * VALIDATION RULE: All field definitions must pass Zod validation before render.     * This prevents invalid field configurations from breaking the UI.     * Any validation failure must show a configuration error.     */    // Normalize type to lowercase and handle textarea/select aliases    let type: FieldType;    switch (field.type as string) {      case "text_area":        type = "textarea";        break;      case "dropdown":        type = "select";        break;      case "checkbox":        type = "boolean";        break;      default:        type = field.type as FieldType;    }
+
     const normalizedType = type.toLowerCase();
     const id = `field_${field.name}`;
     const errorId = `error_${field.name}`;
     const isRequired = !!field.required;
     const isInvalid = showError(field);
+    const fieldHasError = hasFieldError(field.name);
+    const fieldErrors = getFieldErrors(field.name);
+
     switch (normalizedType) {
       case "boolean":
       case "checkbox":
@@ -122,9 +114,28 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
               onBlur={() => handleBlur(field.name)}
               required={isRequired}
               aria-required={isRequired}
-              aria-invalid={isInvalid}
-              aria-describedby={isInvalid ? errorId : undefined}
+              aria-invalid={isInvalid || fieldHasError}
+              aria-describedby={
+                isInvalid || fieldHasError ? errorId : undefined
+              }
+              style={{
+                borderColor: fieldHasError ? "#dc2626" : undefined,
+              }}
             />
+            {fieldHasError && (
+              <div
+                id={errorId}
+                style={{
+                  color: "#dc2626",
+                  fontSize: "0.875rem",
+                  marginTop: "4px",
+                }}
+              >
+                {fieldErrors.map((error, index) => (
+                  <div key={index}>{error}</div>
+                ))}
+              </div>
+            )}
           </div>
         );
       case "number":
@@ -140,9 +151,28 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
               onBlur={() => handleBlur(field.name)}
               required={isRequired}
               aria-required={isRequired}
-              aria-invalid={isInvalid}
-              aria-describedby={isInvalid ? errorId : undefined}
+              aria-invalid={isInvalid || fieldHasError}
+              aria-describedby={
+                isInvalid || fieldHasError ? errorId : undefined
+              }
+              style={{
+                borderColor: fieldHasError ? "#dc2626" : undefined,
+              }}
             />
+            {fieldHasError && (
+              <div
+                id={errorId}
+                style={{
+                  color: "#dc2626",
+                  fontSize: "0.875rem",
+                  marginTop: "4px",
+                }}
+              >
+                {fieldErrors.map((error, index) => (
+                  <div key={index}>{error}</div>
+                ))}
+              </div>
+            )}
           </div>
         );
       case "date":
@@ -158,9 +188,28 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
               onBlur={() => handleBlur(field.name)}
               required={isRequired}
               aria-required={isRequired}
-              aria-invalid={isInvalid}
-              aria-describedby={isInvalid ? errorId : undefined}
+              aria-invalid={isInvalid || fieldHasError}
+              aria-describedby={
+                isInvalid || fieldHasError ? errorId : undefined
+              }
+              style={{
+                borderColor: fieldHasError ? "#dc2626" : undefined,
+              }}
             />
+            {fieldHasError && (
+              <div
+                id={errorId}
+                style={{
+                  color: "#dc2626",
+                  fontSize: "0.875rem",
+                  marginTop: "4px",
+                }}
+              >
+                {fieldErrors.map((error, index) => (
+                  <div key={index}>{error}</div>
+                ))}
+              </div>
+            )}
           </div>
         );
       case "time":
@@ -176,9 +225,28 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
               onBlur={() => handleBlur(field.name)}
               required={isRequired}
               aria-required={isRequired}
-              aria-invalid={isInvalid}
-              aria-describedby={isInvalid ? errorId : undefined}
+              aria-invalid={isInvalid || fieldHasError}
+              aria-describedby={
+                isInvalid || fieldHasError ? errorId : undefined
+              }
+              style={{
+                borderColor: fieldHasError ? "#dc2626" : undefined,
+              }}
             />
+            {fieldHasError && (
+              <div
+                id={errorId}
+                style={{
+                  color: "#dc2626",
+                  fontSize: "0.875rem",
+                  marginTop: "4px",
+                }}
+              >
+                {fieldErrors.map((error, index) => (
+                  <div key={index}>{error}</div>
+                ))}
+              </div>
+            )}
           </div>
         );
       case "textarea":
@@ -193,9 +261,28 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
               onBlur={() => handleBlur(field.name)}
               required={isRequired}
               aria-required={isRequired}
-              aria-invalid={isInvalid}
-              aria-describedby={isInvalid ? errorId : undefined}
+              aria-invalid={isInvalid || fieldHasError}
+              aria-describedby={
+                isInvalid || fieldHasError ? errorId : undefined
+              }
+              style={{
+                borderColor: fieldHasError ? "#dc2626" : undefined,
+              }}
             />
+            {fieldHasError && (
+              <div
+                id={errorId}
+                style={{
+                  color: "#dc2626",
+                  fontSize: "0.875rem",
+                  marginTop: "4px",
+                }}
+              >
+                {fieldErrors.map((error, index) => (
+                  <div key={index}>{error}</div>
+                ))}
+              </div>
+            )}
           </div>
         );
       case "select":
@@ -210,8 +297,13 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
               onBlur={() => handleBlur(field.name)}
               required={isRequired}
               aria-required={isRequired}
-              aria-invalid={isInvalid}
-              aria-describedby={isInvalid ? errorId : undefined}
+              aria-invalid={isInvalid || fieldHasError}
+              aria-describedby={
+                isInvalid || fieldHasError ? errorId : undefined
+              }
+              style={{
+                borderColor: fieldHasError ? "#dc2626" : undefined,
+              }}
             >
               <option value="">Select...</option>
               {(field.options || []).map((opt) => (
@@ -220,6 +312,20 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
                 </option>
               ))}
             </select>
+            {fieldHasError && (
+              <div
+                id={errorId}
+                style={{
+                  color: "#dc2626",
+                  fontSize: "0.875rem",
+                  marginTop: "4px",
+                }}
+              >
+                {fieldErrors.map((error, index) => (
+                  <div key={index}>{error}</div>
+                ))}
+              </div>
+            )}
           </div>
         );
       case "text":
@@ -235,9 +341,28 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
               onBlur={() => handleBlur(field.name)}
               required={isRequired}
               aria-required={isRequired}
-              aria-invalid={isInvalid}
-              aria-describedby={isInvalid ? errorId : undefined}
+              aria-invalid={isInvalid || fieldHasError}
+              aria-describedby={
+                isInvalid || fieldHasError ? errorId : undefined
+              }
+              style={{
+                borderColor: fieldHasError ? "#dc2626" : undefined,
+              }}
             />
+            {fieldHasError && (
+              <div
+                id={errorId}
+                style={{
+                  color: "#dc2626",
+                  fontSize: "0.875rem",
+                  marginTop: "4px",
+                }}
+              >
+                {fieldErrors.map((error, index) => (
+                  <div key={index}>{error}</div>
+                ))}
+              </div>
+            )}
           </div>
         );
       // No file case here
@@ -258,12 +383,12 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
 
   return (
     <div className={`module-wrapper layout-${layoutStyle}`}>
-      <h2>{module.label}</h2>
+      <h2>{module.name || "Form Module"}</h2>
       {module.fields?.map((field: Field) => {
         // File and signature fields are handled by specialized modules (not rendered here)
         if (
           ["file", "file_upload", "signature", "signature_pad"].includes(
-            field.type
+            field.type as string
           )
         ) {
           console.warn("Skipping field type (handled elsewhere):", field.type);

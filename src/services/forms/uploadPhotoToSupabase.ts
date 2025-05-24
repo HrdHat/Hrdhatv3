@@ -12,7 +12,10 @@ import {
   AllowedMimeType,
   PhotoMetadata,
   UploadPhotoOptions,
+  PhotoRecord,
 } from "./photoValidation";
+import { z } from "zod";
+import { FormAssetPhoto } from "../../types/formTypes";
 
 /**
  * This service is the single source of truth for all photo uploads in the application.
@@ -116,11 +119,9 @@ export async function uploadPhotoToSupabase(
     }
 
     // 6. Prepare complete metadata
-    const now = new Date().toISOString();
     const photoRecord = {
       ...metadata,
       photoUrl: storagePath,
-      uploadedAt: now,
       uploadedBy,
       isDeleted: false, // Explicitly set soft delete fields
       deletedAt: null,
@@ -129,7 +130,6 @@ export async function uploadPhotoToSupabase(
         originalName: file.name,
         mimeType: file.type,
         size: file.size,
-        uploadedAt: now,
         uploadedBy,
         signedUrl: signedData.signedUrl,
         ...rest,
@@ -298,12 +298,11 @@ export async function softDeletePhoto(
   photoId: string
 ): Promise<PhotoOperationResult> {
   try {
-    const now = new Date().toISOString();
     const { data, error } = await supabase
       .from(TABLES.formAssetPhotos)
       .update({
         isDeleted: true,
-        deletedAt: now,
+        // deletedAt will be set by DB trigger
       })
       .eq(FORM_ASSET_PHOTOS.id, photoId)
       .is(FORM_ASSET_PHOTOS.isDeleted, false) // Only update if not already deleted
@@ -423,4 +422,87 @@ export async function bulkSoftDeletePhotos(
     results,
     ...(errors.length > 0 && { errors }),
   };
+}
+
+/**
+ * Fetches photos for a form module using validated parameters
+ */
+export async function getPhotosForModule(
+  formId: string,
+  moduleId: string
+): Promise<PhotoOperationResult> {
+  try {
+    // Validate input parameters
+    const validation = z
+      .object({
+        formId: z.string().uuid(),
+        moduleId: z.string().uuid(),
+      })
+      .safeParse({ formId, moduleId });
+
+    if (!validation.success) {
+      return {
+        success: false,
+        error: {
+          message: "Invalid form or module ID",
+          validationErrors: validation.error,
+        },
+      };
+    }
+
+    const { data, error } = await supabase
+      .from(TABLES.formAssetPhotos)
+      .select()
+      .eq(FORM_ASSET_PHOTOS.formId, formId)
+      .eq(FORM_ASSET_PHOTOS.formModuleId, moduleId)
+      .is(FORM_ASSET_PHOTOS.isDeleted, false)
+      .order(FORM_ASSET_PHOTOS.uploadedAt, { ascending: false });
+
+    if (error) {
+      return {
+        success: false,
+        error: {
+          message: "Failed to fetch photos",
+          details: error.message,
+        },
+      };
+    }
+
+    // Map the database records to PhotoRecord type
+    const photos = (data || []).map((record) => ({
+      id: record.id,
+      formId: record.form_id,
+      moduleId: record.form_module_id,
+      type: record.type,
+      name: record.file_name,
+      size: record.file_size,
+      timestamp: new Date(record.uploaded_at).getTime(),
+      uploadedBy: record.uploaded_by,
+      photoUrl: record.photo_url,
+      uploadedAt: record.uploaded_at,
+      metadata: {
+        originalName: record.file_name,
+        mimeType: record.type,
+        size: record.file_size,
+        uploadedAt: record.uploaded_at,
+        uploadedBy: record.uploaded_by,
+      },
+      isDeleted: record.is_deleted,
+      deletedAt: record.deleted_at,
+    }));
+
+    return {
+      success: true,
+      data: photos,
+    };
+  } catch (error) {
+    console.error("Error fetching photos:", error);
+    return {
+      success: false,
+      error: {
+        message: "Unexpected error while fetching photos",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+    };
+  }
 }

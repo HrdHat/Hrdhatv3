@@ -1,3 +1,52 @@
+/**
+ * Form Module Data Save Service
+ *
+ * Purpose:
+ * This service handles saving form module data to Supabase, providing a unified interface
+ * for saving different types of form modules (header, general info, checklists, etc.).
+ * It ensures data integrity through validation and proper database operations.
+ *
+ * Key Features:
+ * - Validates input parameters and module data using Zod schemas
+ * - Handles both single-record and bulk (array) upserts
+ * - Maintains proper timestamps (created_at, updated_at)
+ * - Maps module keys to correct database tables
+ * - Provides detailed error reporting
+ *
+ * Module Types:
+ * - Single Record Modules:
+ *   - header (form_instances)
+ *   - general (form_instance_general_info)
+ *   - preJobChecklist (form_instance_pre_job_checklist)
+ *   - ppeChecklist (form_instance_ppe_platform)
+ *
+ * - Bulk/Array Modules:
+ *   - taskHazards (form_instance_hazards)
+ *   - photos (form_asset_photos)
+ *   - signatures (form_instance_signatures)
+ *
+ * Usage:
+ * ```typescript
+ * const result = await saveFormModuleData({
+ *   formId: "form_123",
+ *   moduleKey: "general",
+ *   data: generalInfoData,
+ *   moduleId: "module_456"
+ * });
+ * ```
+ *
+ * Error Handling:
+ * - Returns { success: boolean, error?: string, validationErrors?: ValidationError[] }
+ * - Validation errors include detailed field-level issues
+ * - Database errors are caught and reported
+ *
+ * Security:
+ * - Relies on Supabase RLS for data access control
+ * - Validates all input data before database operations
+ *
+ * @module saveFormModuleData
+ */
+
 import { supabase } from "../../db/supabaseClient";
 import {
   FormInstance,
@@ -15,7 +64,11 @@ import {
   saveFormModuleDataParamsSchema,
 } from "../../types/formValidationSchemas";
 import { z } from "zod";
-import { formatZodErrors, ValidationError } from "../../utils/validation";
+import {
+  formatZodErrors,
+  formatZodErrorsWithContext,
+  ValidationError,
+} from "../../utils/validation";
 
 // Supported module keys for typed tables
 export type ModuleKey =
@@ -80,21 +133,20 @@ export async function saveFormModuleData({
     };
   }
 
-  // Then validate the module data against its specific schema
-  const schema = schemaMap[moduleKey];
+  /**   * VALIDATION RULE: All module data must pass Zod validation before save.   * This prevents invalid data from being persisted to the database.   * Any validation failure must be shown to the user and block the save.   */ const schema =
+    schemaMap[moduleKey];
   if (!schema) {
     return {
       success: false,
       error: `No validation schema found for module key: ${moduleKey}`,
     };
   }
-
   const dataResult = schema.safeParse(data);
   if (!dataResult.success) {
     return {
       success: false,
       error: "Invalid module data",
-      validationErrors: formatZodErrors(dataResult.error),
+      validationErrors: formatZodErrorsWithContext(dataResult.error, moduleKey),
     };
   }
 
@@ -107,7 +159,6 @@ export async function saveFormModuleData({
   }
 
   let payload: Record<string, any>;
-  const now = new Date().toISOString();
 
   // Handle array (bulk) upserts
   if (Array.isArray(data)) {
@@ -115,8 +166,6 @@ export async function saveFormModuleData({
       data.map((row) => ({
         ...row,
         [FORM_DATA_ENTRIES.formId]: formId,
-        created_at: now,
-        updated_at: now,
       })),
       { onConflict: "id" } // Array modules use id as primary key
     );
@@ -141,8 +190,6 @@ export async function saveFormModuleData({
     {
       ...data,
       [FORM_DATA_ENTRIES.formId]: formId,
-      created_at: now,
-      updated_at: now,
     },
     { onConflict: "form_module_id" } // Single-row modules use form_module_id
   );

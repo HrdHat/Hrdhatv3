@@ -80,7 +80,7 @@ export type PhotoMetadataRecord = z.infer<typeof photoMetadataRecordSchema>;
 // Result type for photo operations
 export interface PhotoOperationResult {
   success: boolean;
-  data?: PhotoRecord;
+  data?: PhotoRecord | PhotoRecord[];
   error?: {
     message: string;
     details?: string;

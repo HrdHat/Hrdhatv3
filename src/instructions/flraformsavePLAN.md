@@ -84,15 +84,110 @@ If your frontend uses camelCase, map/transform it before save.
 
 Proposal: Add Step "1.3.5"
 
-1.3.5 Add runtime validation for all form module data and field definitions (Zod or similar)
+    1.3.5 Implement Runtime Validation for Form Data and Field Definitions
 
-    Create Zod schemas for each module's payload shape and for all dynamic field definitions.
+Objectives
 
-    Validate all user input, form data, and dynamic field configs before saving or rendering.
+    Guarantee all saved form data and field definitions are valid at runtime using Zod.
 
-    Throw or reject any data that fails validation (don't let it silently corrupt the DB).
+    Prevent any invalid, legacy, or malformed data from ever being saved or rendered.
 
-    Use .parse() (throws) or .safeParse() (returns error info) before every .upsert() or .insert() call.
+Action Steps
+A. Authoritative Zod Schemas
+
+    [x]Define Zod schemas for every module’s payload (in a shared file):
+
+        Each module’s data shape must match the DB column names, types, and nullability.
+
+        Export each schema and its inferred TypeScript type.
+
+    [x]Define Zod schemas for all dynamic field definitions:
+
+        Use a discriminated union (z.discriminatedUnion) to ensure only select/multiselect fields have options.
+
+        Provide both “strict” (DB-bound) and “loose” (builder/preview) field schemas as needed.
+
+B. Validation Integration
+
+    Integrate Zod validation into all data processing entry points:
+
+        Before any save or upsert, validate the payload with the correct Zod schema (module or field).
+
+            Use .safeParse() for user input; show clear errors if validation fails.
+
+            Never save or upsert if validation fails—throw or reject with a user-facing error.
+
+        Validate field definitions on load or before rendering in the dynamic form UI.
+
+    Share all schemas between client and edge function/server:
+
+        Move Zod schema files to a location both environments can import.
+
+        Never duplicate validation logic or allow drift.
+
+C. Error Handling and UX
+
+    Handle validation errors proactively:
+
+        Show error messages in the UI at the relevant field/module, not just in logs.
+
+        Provide a clear way to fix invalid input.
+
+        Block saves if data is not valid—fail fast, fail loud.
+
+D. Documentation and Enforcement
+
+    Document the validation rule:
+
+        All module data and field definitions must pass Zod validation before being persisted or used.
+
+        Add a comment block in every save or render entry point to reinforce this.
+
+    (Optional but recommended) Add unit tests:
+
+        Write tests to assert that invalid payloads/field definitions are always rejected.
+
+        Write tests to ensure all schemas match DB structure and handle edge cases (nulls, required fields, etc).
+
+Summary Table
+Task Required? Who/Where Notes
+Zod schemas for modules Yes Shared types file One per module
+Zod schemas for fields Yes Shared types file Discriminated union
+Validate before upsert Yes Client + Edge/Server Use .safeParse()
+Handle errors in UI Yes Frontend Don’t log and ignore
+Share schemas (no drift) Yes All Never duplicate logic
+Document rule everywhere Yes Code + README Policy for future devs
+Audit/migrate legacy data Yes Once before rollout Clean all legacy records
+Unit tests for validation Strongly Test suite Prevent regression
+Don’t:
+
+    Don’t ever save or render data/fields that fail Zod validation.
+
+    Don’t write duplicate schemas for client and server—DRY.
+
+Sample Implementation Notes
+
+At every save:
+
+const schema = schemaMap[moduleKey];
+const result = schema.safeParse(data);
+if (!result.success) {
+// Show error, block save
+}
+
+At every dynamic field render:
+
+const fieldResult = moduleFieldSchema.safeParse(fieldDef);
+if (!fieldResult.success) {
+// Block render, show config error
+}
+
+Critical Note
+
+    Validation is not optional. Any code path that skips or swallows validation errors is a defect.
+
+This plan is industry standard, scalable, and will prevent 90% of silent data drift/bugs.
+If you want a more step-by-step breakdown, let me know which file or flow you want implementation help with first.
 
 []1.4 Normalize Field Definitions
 

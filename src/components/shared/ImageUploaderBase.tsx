@@ -19,10 +19,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   uploadImageToFormModule,
-  FormPhoto,
+  getFormModulePhotos,
 } from "../../services/forms/uploadImageToFormModule";
+import { softDeletePhoto } from "../../services/forms/uploadPhotoToSupabase";
+import { FormAssetPhoto } from "../../types/formTypes";
 import { supabase } from "../../db/supabaseClient";
 import { TABLES, FORM_ASSET_PHOTOS } from "../../constants/database";
+import { toast } from "react-hot-toast";
 // import "../styles/components/image-uploader.css"; // commented out as per request
 
 export type ImageUploaderBaseProps = {
@@ -31,7 +34,7 @@ export type ImageUploaderBaseProps = {
   uploadedBy: string;
   tag?: string;
   maxPhotos?: number;
-  onUploadSuccess?: (photo: FormPhoto) => void;
+  onUploadSuccess?: (photo: FormAssetPhoto) => void;
   onUploadError?: (error: Error) => void;
   onStateChange?: (info: { isUploading: boolean; photoCount: number }) => void;
   // Allow custom file input props to be passed through
@@ -42,7 +45,7 @@ type UploadStatus = {
   file: File;
   progress: number;
   error?: Error;
-  photo?: FormPhoto;
+  photo?: FormAssetPhoto;
 };
 
 type UploadProgressProps = {
@@ -81,8 +84,22 @@ export const ImageUploaderBase: React.FC<ImageUploaderBaseProps> = ({
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatuses, setUploadStatuses] = useState<UploadStatus[]>([]);
-  const [uploadedPhotos, setUploadedPhotos] = useState<FormPhoto[]>([]);
+  const [uploadedPhotos, setUploadedPhotos] = useState<FormAssetPhoto[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch photos on mount and when formId/formModuleId changes
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      const result = await getFormModulePhotos(formId, formModuleId);
+      if (result.data) {
+        setUploadedPhotos(result.data);
+      } else if (result.error) {
+        console.error("Failed to fetch photos:", result.error);
+        onUploadError?.(result.error);
+      }
+    };
+    fetchPhotos();
+  }, [formId, formModuleId, onUploadError]);
 
   // Debounced state change notification
   useEffect(() => {
@@ -98,165 +115,137 @@ export const ImageUploaderBase: React.FC<ImageUploaderBaseProps> = ({
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const files = Array.from(event.target.files || []);
-    if (files.length === 0) return;
-
-    // Check if adding these files would exceed the limit
-    if (uploadedPhotos.length + files.length > maxPhotos) {
-      const error = new Error(`Maximum ${maxPhotos} photos allowed`);
-      onUploadError?.(error);
-      return;
-    }
+    const files = event.target.files;
+    if (!files?.length) return;
 
     setIsUploading(true);
-    const newStatuses: UploadStatus[] = files.map((file) => ({
+    const newStatuses: UploadStatus[] = Array.from(files).map((file) => ({
       file,
       progress: 0,
     }));
     setUploadStatuses((prev) => [...prev, ...newStatuses]);
 
-    // Upload files sequentially to avoid overwhelming the server
-    for (const status of newStatuses) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       try {
-        // Update progress
-        setUploadStatuses((prev) =>
-          prev.map((s) => (s.file === status.file ? { ...s, progress: 10 } : s))
-        );
-
-        const photo = await uploadImageToFormModule({
+        const result = await uploadImageToFormModule({
           formId,
           formModuleId,
-          file: status.file,
+          file,
           uploadedBy,
           tag,
-          source: "web",
         });
 
-        // Update status with success
+        if (result.error) {
+          toast.error(result.error.message);
+          throw result.error;
+        }
+
         setUploadStatuses((prev) =>
-          prev.map((s) =>
-            s.file === status.file ? { ...s, progress: 100, photo } : s
+          prev.map((status, index) =>
+            index === i
+              ? { ...status, progress: 100, photo: result.data || undefined }
+              : status
           )
         );
 
-        setUploadedPhotos((prev) => [...prev, photo]);
-        onUploadSuccess?.(photo);
+        if (result.data) {
+          const photo = result.data;
+          setUploadedPhotos((prev) => [...prev, photo]);
+          onUploadSuccess?.(photo);
+          toast.success("Photo uploaded successfully");
+        }
       } catch (error) {
         console.error("Upload failed:", error);
-        // Update status with error
         setUploadStatuses((prev) =>
-          prev.map((s) =>
-            s.file === status.file ? { ...s, error: error as Error } : s
+          prev.map((status, index) =>
+            index === i
+              ? { ...status, progress: 0, error: error as Error }
+              : status
           )
         );
         onUploadError?.(error as Error);
+        toast.error((error as Error).message || "Failed to upload photo");
       }
     }
 
     setIsUploading(false);
-    // Clear the file input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  const handleClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handlePreviewClick = (photo: FormPhoto) => {
-    if (photo.public_url) {
-      window.open(photo.public_url, "_blank");
+  const handlePreviewClick = (photo: FormAssetPhoto) => {
+    if (photo.photo_url) {
+      window.open(photo.photo_url, "_blank");
     }
   };
 
-  const handleRemove = async (photoToRemove: FormPhoto) => {
+  const handleRemove = async (photoToRemove: FormAssetPhoto) => {
     if (confirm("Remove this photo?")) {
-      try {
-        // Attempt soft delete in database
-        const { error } = await supabase
-          .from(TABLES.formAssetPhotos)
-          .update({
-            [FORM_ASSET_PHOTOS.isDeleted]: true,
-            [FORM_ASSET_PHOTOS.deletedAt]: new Date().toISOString(),
-          })
-          .eq(FORM_ASSET_PHOTOS.id, photoToRemove.id);
-
-        if (error) throw error;
-
-        // Update UI on successful soft delete
+      const result = await softDeletePhoto(photoToRemove.id);
+      if (result.success) {
         setUploadedPhotos((prev) =>
           prev.filter((p) => p.id !== photoToRemove.id)
         );
-      } catch (error) {
-        console.error("Failed to soft delete photo:", error);
-        // Fall back to UI-only removal if database update fails
-        setUploadedPhotos((prev) =>
-          prev.filter((p) => p.id !== photoToRemove.id)
-        );
+        toast.success("Photo removed successfully");
+      } else {
+        console.error("Failed to soft delete photo:", result.error);
+        toast.error(result.error?.message || "Failed to remove photo");
       }
     }
   };
 
   return (
-    <div className="image-uploader">
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        {uploadedPhotos.map((photo) => (
+          <div key={photo.id} className="relative group">
+            <img
+              src={photo.photo_url}
+              alt={photo.description || "Form photo"}
+              className="w-24 h-24 object-cover rounded-lg cursor-pointer"
+              onClick={() => handlePreviewClick(photo)}
+            />
+            <button
+              onClick={() => handleRemove(photo)}
+              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+
       <input
-        ref={fileInputRef}
         type="file"
-        multiple
-        accept="image/jpeg,image/png,image/heic,image/heif"
+        ref={fileInputRef}
         onChange={handleFileSelect}
-        className="image-uploader__input"
+        accept="image/*"
+        multiple
+        className="hidden"
         {...fileInputProps}
       />
 
-      <div className="image-uploader__header">
-        <button
-          onClick={handleClick}
-          className={`image-uploader__button ${
-            isUploading || uploadedPhotos.length >= maxPhotos
-              ? "image-uploader__button--disabled"
-              : ""
-          }`}
-        >
-          {isUploading
-            ? "Uploading..."
-            : uploadedPhotos.length >= maxPhotos
-            ? `Maximum ${maxPhotos} photos reached`
-            : "Add Photos"}
-        </button>
-        <p className="image-uploader__status">
-          {uploadedPhotos.length} of {maxPhotos} photos uploaded
-        </p>
-      </div>
+      <button
+        onClick={() => fileInputRef.current?.click()}
+        disabled={isUploading || uploadedPhotos.length >= maxPhotos}
+        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+      >
+        {isUploading ? "Uploading..." : "Add Photos"}
+      </button>
 
-      <UploadProgress statuses={uploadStatuses} />
-
-      {/* Photo Gallery */}
-      {uploadedPhotos.length > 0 && (
-        <div className="image-uploader__grid">
-          {uploadedPhotos.map((photo) => (
-            <div key={photo.id} className="image-uploader__thumbnail">
-              <img
-                src={photo.public_url}
-                alt={photo.description || "Uploaded image"}
-                title={photo.file_name}
-                onClick={() => handlePreviewClick(photo)}
-                className="image-uploader__thumbnail-image"
-              />
-              <div className="image-uploader__thumbnail-overlay">
-                {photo.file_name}
-              </div>
-              <button
-                onClick={() => handleRemove(photo)}
-                className="image-uploader__button--delete"
-              >
-                ×
-              </button>
-            </div>
-          ))}
+      {uploadStatuses.map((status, index) => (
+        <div key={index} className="mt-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm truncate">{status.file.name}</span>
+            <span className="text-sm">{status.progress}%</span>
+          </div>
+          {status.error && (
+            <div className="text-red-500 text-sm">{status.error.message}</div>
+          )}
         </div>
-      )}
+      ))}
     </div>
   );
 };
