@@ -77,7 +77,11 @@ export async function createFormModuleField({
   version = 1,
 }: CreateFormModuleFieldInput): Promise<FormModuleFieldResult> {
   try {
-    // Validate input using Zod schema
+    /**
+     * VALIDATION RULE: All field definitions must pass Zod validation before save.
+     * This prevents invalid field configurations from being persisted to the database.
+     * Any validation failure must be shown to the user and block the save.
+     */
     const validationResult = formModuleFieldSchema.safeParse({
       formId,
       formModuleId,

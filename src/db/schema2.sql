@@ -272,7 +272,7 @@ CREATE TABLE IF NOT EXISTS form_asset_photos (
     form_id uuid NOT NULL,
     form_module_id uuid,
     photo_url text NOT NULL,
-    description text,
+    photo_description text,
     uploaded_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
     CONSTRAINT fk_form_asset_photos_form_id FOREIGN KEY (form_id) REFERENCES form_instances(id) ON UPDATE NO ACTION ON DELETE NO ACTION,

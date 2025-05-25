@@ -272,7 +272,7 @@ export const FORM_ASSET_PHOTOS = {
   uploadedAt: "uploaded_at",
   isDeleted: "is_deleted",
   deletedAt: "deleted_at",
-  description: "description",
+  photoDescription: "photo_description",
   tag: "tag",
   source: "source",
   sortOrder: "sort_order",

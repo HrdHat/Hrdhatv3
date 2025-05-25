@@ -38,15 +38,8 @@ const FormAssetPhotosModule: React.FC<Props> = ({
     fetchPhotos();
   }, [formId, formModuleId, onChange]);
 
-  const handleUploadSuccess = (result: {
-    data: FormAssetPhoto | null;
-    error: Error | null;
-  }) => {
-    if (result.error || !result.data) {
-      console.error("Photo upload failed:", result.error);
-      return;
-    }
-    const newPhotos = [...photos, result.data];
+  const handleUploadSuccess = (photo: FormAssetPhoto) => {
+    const newPhotos = [...photos, photo];
     setPhotos(newPhotos);
     onChange(newPhotos);
   };
@@ -75,7 +68,7 @@ const FormAssetPhotosModule: React.FC<Props> = ({
           <div key={photo.id} className="relative group">
             <img
               src={photo.photo_url}
-              alt={photo.description || "Form photo"}
+              alt={photo.photo_description || "Form photo"}
               className="w-24 h-24 object-cover rounded-lg"
             />
             <button

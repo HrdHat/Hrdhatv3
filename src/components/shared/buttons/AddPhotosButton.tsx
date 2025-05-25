@@ -18,7 +18,7 @@
 
 import React, { useState } from "react";
 import { ImageUploaderBase } from "../ImageUploaderBase";
-import { FormPhoto } from "../../../services/forms/uploadImageToFormModule";
+import { FormAssetPhoto } from "../../../types/formTypes";
 // import "../../../styles/components/image-uploader.css";
 
 export type AddPhotosButtonProps = {
@@ -27,7 +27,7 @@ export type AddPhotosButtonProps = {
   uploadedBy: string;
   tag?: string;
   maxPhotos?: number;
-  onUploadSuccess?: (photo: FormPhoto) => void;
+  onUploadSuccess?: (photo: FormAssetPhoto) => void;
   onUploadError?: (error: Error) => void;
   buttonText?: string;
   buttonClassName?: string;

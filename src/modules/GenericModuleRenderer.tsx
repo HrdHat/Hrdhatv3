@@ -89,9 +89,31 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
   const showError = (field: Field) =>
     touched[field.name] && isFieldEmpty(field);
 
-    const renderInput = (field: Field) => {    /**     * VALIDATION RULE: All field definitions must pass Zod validation before render.     * This prevents invalid field configurations from breaking the UI.     * Any validation failure must show a configuration error.     */    // Normalize type to lowercase and handle textarea/select aliases    let type: FieldType;    switch (field.type as string) {      case "text_area":        type = "textarea";        break;      case "dropdown":        type = "select";        break;      case "checkbox":        type = "boolean";        break;      default:        type = field.type as FieldType;    }
+  const renderInput = (field: Field) => {
+    /**
+     * VALIDATION RULE: All field definitions must pass Zod validation before render.
+     * This prevents invalid field configurations from breaking the UI.
+     * Any validation failure must show a configuration error.
+     */
 
-    const normalizedType = type.toLowerCase();
+    // Strict type checking - no aliases allowed
+    if (
+      ![
+        "text",
+        "boolean",
+        "date",
+        "time",
+        "number",
+        "textarea",
+        "select",
+      ].includes(field.type)
+    ) {
+      throw new Error(
+        `Invalid field type "${field.type}" for field "${field.name}". Only normalized types are allowed: text, boolean, date, time, number, textarea, select`
+      );
+    }
+
+    const type = field.type;
     const id = `field_${field.name}`;
     const errorId = `error_${field.name}`;
     const isRequired = !!field.required;
@@ -99,9 +121,8 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
     const fieldHasError = hasFieldError(field.name);
     const fieldErrors = getFieldErrors(field.name);
 
-    switch (normalizedType) {
+    switch (type) {
       case "boolean":
-      case "checkbox":
         return (
           <div>
             <label htmlFor={id}>{field.label}</label>
@@ -367,8 +388,8 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
         );
       // No file case here
       default:
-        console.warn("Unknown field type:", normalizedType, field);
-        return <div>Unsupported field type: {normalizedType}</div>;
+        console.warn("Unknown field type:", type, field);
+        return <div>Unsupported field type: {type}</div>;
     }
   };
 

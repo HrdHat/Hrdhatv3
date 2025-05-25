@@ -1,6 +1,12 @@
 /**
+ * DOCUMENTATION FILE - KEEP FOR REFERENCE
+ * =======================================
+ *
  * Example showing how to use the enhanced validation system
  * This demonstrates the complete implementation of plan 1.3.5 part C
+ *
+ * This file serves as documentation for developers on how to properly
+ * implement validation in form components. DO NOT DELETE.
  */
 
 import React, { useState } from "react";

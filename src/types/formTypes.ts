@@ -100,7 +100,7 @@ export type FormAssetPhoto = {
   form_id: string; // uuid, required
   form_module_id?: string | null; // uuid, nullable
   photo_url: string; // text, required
-  description?: string | null; // text, nullable
+  photo_description?: string | null; // text, nullable
   uploaded_at: string; // timestamp with time zone, required
 };
 
@@ -189,14 +189,22 @@ export interface SaveFormModuleDataParams<T extends ModuleKey = ModuleKey> {
 }
 
 // Module Key Types
-export type ModuleKey =
-  | "header"
-  | "general"
-  | "preJobChecklist"
-  | "ppeChecklist"
-  | "taskHazards"
-  | "photos"
-  | "signatures";
+export const MODULE_KEYS = [
+  "header",
+  "general",
+  "preJobChecklist",
+  "ppeChecklist",
+  "taskHazards",
+  "photos",
+  "signatures",
+] as const;
+
+export type ModuleKey = (typeof MODULE_KEYS)[number];
+
+// Runtime type guard for module keys
+export function isModuleKey(key: string): key is ModuleKey {
+  return (MODULE_KEYS as readonly string[]).includes(key);
+}
 
 // Type-safe Module Data Types
 export interface ModuleData {

@@ -40,6 +40,7 @@ describe("Validation System", () => {
         project_name: "",
         supervisor_name: "John",
         date: "2024-01-01",
+        crew_members_count: 5,
       };
       const result = testModuleSchema.safeParse(invalidData);
 

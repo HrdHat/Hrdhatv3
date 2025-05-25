@@ -138,6 +138,11 @@ export async function saveFields(req: Request) {
         );
       }
 
+      /**
+       * VALIDATION RULE: All module data must pass Zod validation before save.
+       * This prevents invalid data from being persisted to the database.
+       * Any validation failure must be returned as an error response.
+       */
       // Validate the data using safeParse for nullable fields
       const validationResult = schema.safeParse(data);
       if (!validationResult.success) {

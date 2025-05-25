@@ -45,46 +45,6 @@ export function ModuleStateIndicator({
           ✓
         </span>
       )}
-
-      <style jsx>{`
-        .module-state-indicator {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          font-size: 1.2em;
-          padding: 4px;
-          border-radius: 4px;
-          background: rgba(255, 255, 255, 0.9);
-        }
-
-        .saving-indicator {
-          animation: pulse 1.5s infinite;
-        }
-
-        .dirty-indicator {
-          color: #f59e0b;
-        }
-
-        .error-indicator {
-          color: #ef4444;
-        }
-
-        .last-saved-indicator {
-          color: #10b981;
-        }
-
-        @keyframes pulse {
-          0% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.5;
-          }
-          100% {
-            opacity: 1;
-          }
-        }
-      `}</style>
     </div>
   );
 }

@@ -38,7 +38,7 @@ interface UploadOptions {
   file: File;
   uploadedBy: string;
   tag?: string;
-  description?: string;
+  photo_description?: string;
   source?: "mobile" | "web" | "imported";
 }
 
@@ -52,7 +52,7 @@ export async function uploadImageToFormModule({
   file,
   uploadedBy,
   tag,
-  description,
+  photo_description,
   source = "web",
 }: UploadOptions): Promise<FormAssetPhotoResult> {
   // Use uploadPhotoToSupabase for proper validation and upload
@@ -79,14 +79,24 @@ export async function uploadImageToFormModule({
     };
   }
 
+  // Ensure we have a single photo record, not an array
+  const photoRecord = Array.isArray(result.data) ? result.data[0] : result.data;
+
+  if (!photoRecord) {
+    return {
+      data: null,
+      error: new Error("No photo data returned"),
+    };
+  }
+
   // Map the result to FormAssetPhoto type (snake_case for database)
   const photoData: FormAssetPhoto = {
-    id: result.data.id,
-    form_id: result.data.formId,
-    form_module_id: result.data.moduleId,
-    photo_url: result.data.photoUrl,
-    uploaded_at: result.data.uploadedAt,
-    description: description || null,
+    id: photoRecord.id,
+    form_id: photoRecord.formId,
+    form_module_id: photoRecord.moduleId || null,
+    photo_url: photoRecord.photoUrl,
+    uploaded_at: photoRecord.uploadedAt,
+    photo_description: photo_description || null,
   };
 
   return {
@@ -131,7 +141,7 @@ export async function uploadMultipleImagesToFormModule(
         form_module_id: photo.moduleId,
         photo_url: photo.photoUrl,
         uploaded_at: photo.uploadedAt,
-        description: uploads[r.index].description || null,
+        photo_description: uploads[r.index].photo_description || null,
       };
     });
 
@@ -168,7 +178,7 @@ export async function getFormModulePhotos(
         form_module_id: photo.moduleId,
         photo_url: photo.photoUrl,
         uploaded_at: photo.uploadedAt,
-        description: null, // Description is not part of the core photo data
+        photo_description: null, // Description is not part of the core photo data
       }))
     : [
         {
@@ -177,7 +187,7 @@ export async function getFormModulePhotos(
           form_module_id: result.data.moduleId,
           photo_url: result.data.photoUrl,
           uploaded_at: result.data.uploadedAt,
-          description: null, // Description is not part of the core photo data
+          photo_description: null, // Description is not part of the core photo data
         },
       ];
 

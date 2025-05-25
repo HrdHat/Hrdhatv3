@@ -1,11 +1,12 @@
 import { useRef, useState, useCallback } from "react";
 import { debounce } from "lodash";
-import { saveFields } from "../services/forms/saveFields";
+import { saveFormModuleData } from "../services/forms/saveFormModuleData";
 import { SaveFormModuleDataParams } from "../types/formTypes";
 import { useToast } from "./useToast";
 import { useSaveQueue } from "./useSaveQueue";
 import { useModuleState } from "./useModuleState";
 import { ModuleKey } from "../types/formTypes";
+import { ValidationError } from "../utils/validation";
 
 interface SaveStatus {
   isSaving: boolean;
@@ -13,7 +14,7 @@ interface SaveStatus {
   lastVersion: number | null;
   lastUpdatedAt: string | null;
   error: string | null;
-  validationErrors: Record<string, string[]> | null;
+  validationErrors: ValidationError[] | null;
 }
 
 export function useDebouncedSave<T extends ModuleKey>(delay = 1000) {
@@ -41,16 +42,20 @@ export function useDebouncedSave<T extends ModuleKey>(delay = 1000) {
       for (const [key, params] of saveQueueRef.current) {
         try {
           setModuleSaving(params.moduleKey, true);
-          const result = await saveFields(params);
+          const result = await saveFormModuleData(params);
 
           if (result.error) {
             if (result.error === "CONCURRENT_MODIFICATION") {
-              showToast(
-                "Someone else has modified this form. Please refresh to get the latest changes.",
-                "error"
-              );
+              showToast({
+                message:
+                  "Someone else has modified this form. Please refresh to get the latest changes.",
+                type: "error",
+              });
               setSaveStatus((prev) => ({
-                ...prev,
+                isSaving: prev.isSaving,
+                lastSaved: prev.lastSaved,
+                lastVersion: prev.lastVersion,
+                lastUpdatedAt: prev.lastUpdatedAt,
                 error: "CONCURRENT_MODIFICATION",
                 validationErrors: null,
               }));
@@ -64,43 +69,53 @@ export function useDebouncedSave<T extends ModuleKey>(delay = 1000) {
             // Add to save queue if offline or network error
             if (!navigator.onLine || result.error.includes("network")) {
               saveQueue.addToQueue(params);
-              showToast(
-                "You're offline. Changes will be saved when you're back online.",
-                "warning"
-              );
+              showToast({
+                message:
+                  "You're offline. Changes will be saved when you're back online.",
+                type: "warning",
+              });
               setModuleError(params.moduleKey, "Offline - changes queued");
               continue;
             }
 
-            showToast(result.error, "error");
+            showToast({ message: result.error, type: "error" });
             setSaveStatus((prev) => ({
-              ...prev,
-              error: result.error,
-              validationErrors: null,
+              isSaving: prev.isSaving,
+              lastSaved: prev.lastSaved,
+              lastVersion: prev.lastVersion,
+              lastUpdatedAt: prev.lastUpdatedAt,
+              error: result.error || null,
+              validationErrors: result.validationErrors || null,
             }));
             setModuleError(params.moduleKey, result.error);
             continue;
           }
 
           setSaveStatus((prev) => ({
-            ...prev,
+            isSaving: prev.isSaving,
             lastSaved: new Date(),
-            lastVersion: result.version,
-            lastUpdatedAt: result.updated_at,
+            lastVersion: params.version || null,
+            lastUpdatedAt: params.updated_at || null,
             error: null,
             validationErrors: null,
           }));
 
-          setModuleSaved(params.moduleKey, result.updated_at);
+          setModuleSaved(
+            params.moduleKey,
+            params.updated_at || new Date().toISOString()
+          );
           saveQueueRef.current.delete(key);
         } catch (error) {
           console.error("Error saving fields:", error);
-          showToast(
-            "Failed to save changes. Will retry automatically.",
-            "error"
-          );
+          showToast({
+            message: "Failed to save changes. Will retry automatically.",
+            type: "error",
+          });
           setSaveStatus((prev) => ({
-            ...prev,
+            isSaving: prev.isSaving,
+            lastSaved: prev.lastSaved,
+            lastVersion: prev.lastVersion,
+            lastUpdatedAt: prev.lastUpdatedAt,
             error: "Failed to save changes",
             validationErrors: null,
           }));

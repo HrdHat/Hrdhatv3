@@ -31,7 +31,11 @@ export async function createForm({
   description,
 }: CreateFormInput): Promise<CreateFormResult> {
   try {
-    // Validate input using Zod schema
+    /**
+     * VALIDATION RULE: All form data must pass Zod validation before save.
+     * This prevents invalid data from being persisted to the database.
+     * Any validation failure must be shown to the user and block the save.
+     */
     const validationResult = createFormSchema.safeParse({
       userId,
       companyId,

@@ -160,7 +160,12 @@ export async function uploadSignatureToSupabase({
   shouldReplace?: boolean;
 }): Promise<SignatureUploadResult> {
   try {
-    // 1. Validate metadata
+    // Validate metadata
+    /**
+     * VALIDATION RULE: All signature metadata must pass Zod validation before save.
+     * This prevents invalid signature data from being persisted to the database.
+     * Any validation failure must be shown to the user and block the save.
+     */
     const validationResult = signatureMetadataBaseSchema.safeParse({
       ...metadata,
       formId, // Ensure formId matches the one passed in

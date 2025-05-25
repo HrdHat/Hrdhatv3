@@ -51,7 +51,11 @@ export async function uploadPhotoToSupabase(
   options: UploadPhotoOptions
 ): Promise<PhotoOperationResult> {
   try {
-    // 1. Validate all input data
+    /**
+     * VALIDATION RULE: All upload options must pass Zod validation before processing.
+     * This prevents invalid configurations from causing upload failures.
+     * Any validation failure must be shown to the user and block the upload.
+     */
     const validation = uploadPhotoOptionsSchema.safeParse(options);
     if (!validation.success) {
       return {
@@ -136,7 +140,11 @@ export async function uploadPhotoToSupabase(
       },
     };
 
-    // 7. Validate complete record before saving
+    /**
+     * VALIDATION RULE: All photo record data must pass Zod validation before save.
+     * This prevents invalid photo metadata from being persisted to the database.
+     * Any validation failure must be shown to the user and block the save.
+     */
     const recordValidation = photoRecordSchema.safeParse(photoRecord);
     if (!recordValidation.success) {
       return {
@@ -432,20 +440,24 @@ export async function getPhotosForModule(
   moduleId: string
 ): Promise<PhotoOperationResult> {
   try {
-    // Validate input parameters
-    const validation = z
+    /**
+     * VALIDATION RULE: All form and module IDs must pass Zod validation before processing.
+     * This prevents invalid ID formats from causing database errors.
+     * Any validation failure must be shown to the user and block the operation.
+     */
+    const idsValidation = z
       .object({
-        formId: z.string().uuid(),
-        moduleId: z.string().uuid(),
+        formId: z.string().uuid("Invalid form ID format"),
+        moduleId: z.string().uuid("Invalid module ID format"),
       })
       .safeParse({ formId, moduleId });
 
-    if (!validation.success) {
+    if (!idsValidation.success) {
       return {
         success: false,
         error: {
           message: "Invalid form or module ID",
-          validationErrors: validation.error,
+          validationErrors: idsValidation.error,
         },
       };
     }

@@ -1,4 +1,15 @@
 /**
+ * Form Module Data Save Service - CRITICAL SYSTEM FILE
+ * ====================================================
+ *
+ * This file handles all form module data persistence with validation.
+ * DO NOT MODIFY without understanding the full impact on the save system.
+ *
+ * All data MUST pass Zod validation before being saved to the database.
+ * This service is the primary entry point for all form data saves.
+ */
+
+/**
  * Form Module Data Save Service
  *
  * Purpose:
@@ -166,6 +177,7 @@ export async function saveFormModuleData({
       data.map((row) => ({
         ...row,
         [FORM_DATA_ENTRIES.formId]: formId,
+        ...(moduleId && { form_module_id: moduleId }),
       })),
       { onConflict: "id" } // Array modules use id as primary key
     );
@@ -190,8 +202,9 @@ export async function saveFormModuleData({
     {
       ...data,
       [FORM_DATA_ENTRIES.formId]: formId,
+      ...(moduleId && moduleKey !== "header" && { form_module_id: moduleId }),
     },
-    { onConflict: "form_module_id" } // Single-row modules use form_module_id
+    { onConflict: moduleKey === "header" ? "id" : "form_module_id" } // Header uses id, others use form_module_id
   );
   if (import.meta.env.DEV) {
     if (error) {

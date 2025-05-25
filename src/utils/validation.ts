@@ -1,3 +1,14 @@
+/**
+ * Validation Utilities - CRITICAL SYSTEM FILE
+ * ===========================================
+ *
+ * This file provides core validation utilities used throughout the application.
+ * DO NOT MODIFY without understanding the full impact on validation error handling.
+ *
+ * These utilities format Zod validation errors into user-friendly messages
+ * and provide field-level error management for the UI.
+ */
+
 import { z } from "zod";
 
 export interface ValidationError {

@@ -1,6 +1,7 @@
 import { supabase } from "../db/supabaseClient";
+import { User } from "@supabase/supabase-js";
+import { FlraForm } from "../types/formTypes";
 import { TABLES, FORM_INSTANCE_FIELDS } from "../constants/database";
-import { FlraForm } from "../services/forms/createForm";
 
 /**
  * Validates that a field exists in the FlraForm type

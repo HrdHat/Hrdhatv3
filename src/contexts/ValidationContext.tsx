@@ -1,3 +1,14 @@
+/**
+ * Validation Context - CRITICAL SYSTEM FILE
+ * =========================================
+ *
+ * This file provides centralized validation state management for the entire application.
+ * DO NOT MODIFY without understanding the full impact on validation UX.
+ *
+ * This context manages validation errors and provides utilities for field-level error display.
+ * Used by all form components to show inline validation feedback.
+ */
+
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { ValidationError, createValidationErrorMap } from "../utils/validation";
 

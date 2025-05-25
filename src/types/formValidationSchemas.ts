@@ -1,5 +1,9 @@
 /**
- * Form Validation Schemas
+ * Form Validation Schemas - CRITICAL SYSTEM FILE
+ * ===============================================
+ *
+ * This file is the single source of truth for all form data validation.
+ * DO NOT MODIFY without understanding the full impact on the validation system.
  *
  * CRITICAL: These schemas are the single source of truth for form data validation.
  *
@@ -56,6 +60,8 @@ const BaseFieldStrict = z.object({
 });
 
 // Base field schema for all field types (loose builder version)
+// BUILDER-ONLY: Used for form builder/preview mode where some fields may be optional
+// DO NOT USE for runtime validation of saved data - use BaseFieldStrict instead
 const BaseFieldLoose = z.object({
   id: z.string().uuid("Invalid UUID format").optional(),
   form_id: z.string().uuid("Invalid form ID format").optional(),
@@ -85,6 +91,8 @@ const SelectFieldStrict = BaseFieldStrict.extend({
 });
 
 // Select field schema (loose)
+// BUILDER-ONLY: Used for form builder/preview mode where options may be empty
+// DO NOT USE for runtime validation of saved data - use SelectFieldStrict instead
 const SelectFieldLoose = BaseFieldLoose.extend({
   type: z.enum(["select", "multiselect"]),
   options: z
@@ -113,6 +121,8 @@ const NonSelectFieldStrict = BaseFieldStrict.extend({
 });
 
 // Non-select field schema (loose)
+// BUILDER-ONLY: Used for form builder/preview mode where some fields may be optional
+// DO NOT USE for runtime validation of saved data - use NonSelectFieldStrict instead
 const NonSelectFieldLoose = BaseFieldLoose.extend({
   type: z.enum([
     "text",
@@ -133,6 +143,8 @@ export const moduleFieldSchemaStrict = z.discriminatedUnion("type", [
   NonSelectFieldStrict,
 ]);
 
+// BUILDER-ONLY: Used for form builder/preview mode where validation is more lenient
+// DO NOT USE for runtime validation of saved data - use moduleFieldSchemaStrict instead
 export const moduleFieldSchemaLoose = z.discriminatedUnion("type", [
   SelectFieldLoose,
   NonSelectFieldLoose,
@@ -253,7 +265,7 @@ export const formAssetPhotoSchema = z
     form_id: z.string().uuid("Invalid form ID format"),
     form_module_id: z.string().uuid("Invalid module ID format").nullable(),
     photo_url: z.string().url("Invalid photo URL format"),
-    description: z.string().nullable(),
+    photo_description: z.string().nullable(),
     uploaded_at: z.string().datetime(),
   })
   .strict();

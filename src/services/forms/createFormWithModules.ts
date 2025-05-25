@@ -1,4 +1,5 @@
-import { createForm, FlraForm, SupabaseError as FormError } from "./createForm";
+import { createForm } from "./createForm";
+import { FlraForm, type ModuleKey } from "../../types/formTypes";
 import {
   createFormModule,
   FormModule,
@@ -59,8 +60,8 @@ export async function createFormWithModules({
   // 1. Create the form
   const { form, error: formError } = await createForm({
     userId,
-    companyId,
-    projectId,
+    companyId: companyId || "",
+    projectId: projectId || "",
     title: safeTitle,
     description,
   });

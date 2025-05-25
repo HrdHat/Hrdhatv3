@@ -114,7 +114,7 @@ const validPayloads: Record<ModuleKey, any> = {
       form_id: "123e4567-e89b-12d3-a456-426614174017",
       form_module_id: "123e4567-e89b-12d3-a456-426614174018",
       photo_url: "https://example.com/photo.jpg",
-      description: "Test photo",
+      photo_description: "Test photo",
       uploaded_at: "2024-03-20T12:00:00Z",
     },
   ],
@@ -358,7 +358,7 @@ describe("Form Validation Schemas", () => {
       const result = schemaMap.photos.safeParse([
         {
           photo_url: "not-a-url",
-          description: "A".repeat(501), // Max 500 chars
+          photo_description: "A".repeat(501), // Max 500 chars
         },
       ]);
       expect(result.success).toBe(false);

@@ -203,7 +203,7 @@ export const ImageUploaderBase: React.FC<ImageUploaderBaseProps> = ({
           <div key={photo.id} className="relative group">
             <img
               src={photo.photo_url}
-              alt={photo.description || "Form photo"}
+              alt={photo.photo_description || "Form photo"}
               className="w-24 h-24 object-cover rounded-lg cursor-pointer"
               onClick={() => handlePreviewClick(photo)}
             />

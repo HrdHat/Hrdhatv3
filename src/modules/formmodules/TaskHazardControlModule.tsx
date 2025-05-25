@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { TaskHazardControl } from "../../types/formTypes";
 
 type Props = {
@@ -12,70 +12,118 @@ const TaskHazardControlModule: React.FC<Props> = ({
   onChange,
   layoutStyle = "default",
 }) => {
+  const [taskHazards, setTaskHazards] = useState<TaskHazardControl[]>(
+    value && value.length > 0
+      ? value
+      : [
+          {
+            id: crypto.randomUUID(),
+            form_id: "",
+            form_module_id: null,
+            task: "",
+            hazard: "",
+            risk_level_before: null,
+            control: "",
+            risk_level_after: null,
+            created_at: new Date().toISOString(),
+          },
+        ]
+  );
+
+  useEffect(() => {
+    setTaskHazards(
+      value && value.length > 0
+        ? value
+        : [
+            {
+              id: crypto.randomUUID(),
+              form_id: "",
+              form_module_id: null,
+              task: "",
+              hazard: "",
+              risk_level_before: null,
+              control: "",
+              risk_level_after: null,
+              created_at: new Date().toISOString(),
+            },
+          ]
+    );
+  }, [value]);
+
   useEffect(() => {
     if (!value || value.length === 0) {
       onChange([
         {
+          id: crypto.randomUUID(),
+          form_id: "",
+          form_module_id: null,
           task: "",
           hazard: "",
-          risk_level_before: undefined,
+          risk_level_before: null,
           control: "",
-          risk_level_after: undefined,
+          risk_level_after: null,
+          created_at: new Date().toISOString(),
         },
       ]);
     }
-  }, [value, onChange]);
+  }, []); // Only run once on mount
 
-  const handleChange = (
+  const updateField = (
     idx: number,
     field: keyof TaskHazardControl,
-    val: string
+    val: any
   ) => {
-    if (field === "risk_level_before" || field === "risk_level_after") {
-      onChange(
-        value.map((row, i) =>
-          i === idx
-            ? { ...row, [field]: val === "" ? undefined : Number(val) }
-            : row
-        )
-      );
-    } else {
-      onChange(
-        value.map((row, i) => (i === idx ? { ...row, [field]: val } : row))
-      );
-    }
+    const updatedHazards = taskHazards.map((row, i) => {
+      if (i !== idx) return row;
+
+      if (field === "risk_level_before" || field === "risk_level_after") {
+        return { ...row, [field]: val === "" ? null : Number(val) };
+      }
+      return { ...row, [field]: val };
+    });
+
+    setTaskHazards(updatedHazards);
+    onChange(updatedHazards);
   };
 
-  const addRow = () => {
-    onChange([
-      ...value,
+  const addTaskHazard = () => {
+    const newHazards = [
+      ...taskHazards,
       {
+        id: crypto.randomUUID(),
+        form_id: "",
+        form_module_id: null,
         task: "",
         hazard: "",
-        risk_level_before: undefined,
+        risk_level_before: null,
         control: "",
-        risk_level_after: undefined,
+        risk_level_after: null,
+        created_at: new Date().toISOString(),
       },
-    ]);
+    ];
+    setTaskHazards(newHazards);
+    onChange(newHazards);
   };
 
   const removeRow = (idx: number) => {
-    if (value.length <= 1) return;
-    onChange(value.filter((_, i) => i !== idx));
+    if (taskHazards.length <= 1) return;
+    const newHazards = taskHazards.filter((_, i) => i !== idx);
+    setTaskHazards(newHazards);
+    onChange(newHazards);
   };
 
   return (
     <section className={`module-wrapper layout-${layoutStyle}`}>
       <h2>Task Hazard Control Module</h2>
       <div>
-        {value.map((row, idx) => (
+        {taskHazards.map((row, idx) => (
           <div key={idx}>
             <label>
               Task:
               <input
                 type="text"
                 value={row.task}
-                onChange={(e) => handleChange(idx, "task", e.target.value)}
+                onChange={(e) => updateField(idx, "task", e.target.value)}
               />
             </label>
             <label>
@@ -83,7 +131,7 @@ const TaskHazardControlModule: React.FC<Props> = ({
               <input
                 type="text"
                 value={row.hazard}
-                onChange={(e) => handleChange(idx, "hazard", e.target.value)}
+                onChange={(e) => updateField(idx, "hazard", e.target.value)}
               />
             </label>
             <label>
@@ -92,7 +140,7 @@ const TaskHazardControlModule: React.FC<Props> = ({
                 type="number"
                 value={row.risk_level_before ?? ""}
                 onChange={(e) =>
-                  handleChange(idx, "risk_level_before", e.target.value)
+                  updateField(idx, "risk_level_before", e.target.value)
                 }
               />
             </label>
@@ -101,7 +149,7 @@ const TaskHazardControlModule: React.FC<Props> = ({
               <input
                 type="text"
                 value={row.control}
-                onChange={(e) => handleChange(idx, "control", e.target.value)}
+                onChange={(e) => updateField(idx, "control", e.target.value)}
               />
             </label>
             <label>
@@ -110,20 +158,20 @@ const TaskHazardControlModule: React.FC<Props> = ({
                 type="number"
                 value={row.risk_level_after ?? ""}
                 onChange={(e) =>
-                  handleChange(idx, "risk_level_after", e.target.value)
+                  updateField(idx, "risk_level_after", e.target.value)
                 }
               />
             </label>
             <button
               type="button"
               onClick={() => removeRow(idx)}
-              disabled={value.length <= 1}
+              disabled={taskHazards.length <= 1}
             >
               Remove
             </button>
           </div>
         ))}
-        <button type="button" onClick={addRow}>
+        <button type="button" onClick={addTaskHazard}>
           Add Row
         </button>
       </div>

@@ -95,9 +95,9 @@ Objectives
 Action Steps
 A. Authoritative Zod Schemas
 
-    [x]Define Zod schemas for every module’s payload (in a shared file):
+    [x]Define Zod schemas for every module's payload (in a shared file):
 
-        Each module’s data shape must match the DB column names, types, and nullability.
+        Each module's data shape must match the DB column names, types, and nullability.
 
         Export each schema and its inferred TypeScript type.
 
@@ -105,7 +105,7 @@ A. Authoritative Zod Schemas
 
         Use a discriminated union (z.discriminatedUnion) to ensure only select/multiselect fields have options.
 
-        Provide both “strict” (DB-bound) and “loose” (builder/preview) field schemas as needed.
+        Provide both "strict" (DB-bound) and "loose" (builder/preview) field schemas as needed.
 
 B. Validation Integration
 
@@ -154,16 +154,16 @@ Task Required? Who/Where Notes
 Zod schemas for modules Yes Shared types file One per module
 Zod schemas for fields Yes Shared types file Discriminated union
 Validate before upsert Yes Client + Edge/Server Use .safeParse()
-Handle errors in UI Yes Frontend Don’t log and ignore
+Handle errors in UI Yes Frontend Don't log and ignore
 Share schemas (no drift) Yes All Never duplicate logic
 Document rule everywhere Yes Code + README Policy for future devs
 Audit/migrate legacy data Yes Once before rollout Clean all legacy records
 Unit tests for validation Strongly Test suite Prevent regression
-Don’t:
+Don't:
 
-    Don’t ever save or render data/fields that fail Zod validation.
+    Don't ever save or render data/fields that fail Zod validation.
 
-    Don’t write duplicate schemas for client and server—DRY.
+    Don't write duplicate schemas for client and server—DRY.
 
 Sample Implementation Notes
 
@@ -243,44 +243,44 @@ For each field in the definitions above:
 
 So the complete final list is:
 [x]src/types/formModules.ts
-src/services/forms/fetchModuleFields.ts
-src/modules/GenericModuleRenderer.tsx
-src/hooks/useFlraFormData.ts
-src/types/renderer.types.ts
-src/types/formTypes.ts
-src/services/forms/createFormModuleField.ts
-src/services/forms/createFormModule.ts
-src/modules/formmodules/FlraHeaderModule.tsx
-src/services/forms/cloneFieldsFromModule.ts
-src/services/forms/cloneFormStructure.ts
-src/utils/formNumberGenerator.ts
-src/services/forms/createForm.ts
-src/types/formSchemas.ts
-src/types/formSchemasStrict.ts
-src/services/forms/saveFormModuleData.ts
-src/services/forms/uploadImageToFormModule.ts
-src/services/forms/uploadPhotoToSupabase.ts
-docs/FORMSAVINGLOGIC.md
-src/pages/FlraFormPage.tsx
-src/types/formSchemaShapes.ts
-src/modules/formmodules/SignatureModuleRenderer.tsx
-src/modules/formmodules/PhotoModuleRenderer.tsx
-src/modules/formmodules/SignatureModule.tsx
-src/modules/formmodules/FormAssetPhotosModule.tsx
-src/modules/formmodules/TaskHazardControlModule.tsx
-src/modules/forms/flra/ActiveFlraDrawer.tsx
-src/modules/forms/flra/FLRAFormStatePlan.md
-src/components/ModuleStateIndicator.tsx
-src/components/SaveQueueStatus.tsx
-src/components/ModuleRenderer.tsx
-src/components/shared/ImageUploaderBase.tsx
-src/components/shared/SignatureCanvas.tsx
-src/hooks/useSaveQueue.ts
-src/hooks/useDebouncedSave.ts
-src/hooks/useModuleState.ts
-src/hooks/useCreateFlraForm.ts
-src/constants/storage.ts
-src/db/supabaseClient.ts
+[x]src/services/forms/fetchModuleFields.ts
+[x]src/modules/GenericModuleRenderer.tsx
+[x]src/hooks/useFlraFormData.ts
+[x]src/types/renderer.types.ts
+[x]src/types/formTypes.ts
+[x]src/services/forms/createFormModuleField.ts
+[x]src/services/forms/createFormModule.ts
+[x]src/modules/formmodules/FlraHeaderModule.tsx
+[x]src/services/forms/cloneFieldsFromModule.ts
+[x]src/services/forms/cloneFormStructure.ts
+[x]src/utils/formNumberGenerator.ts
+[x]src/services/forms/createForm.ts
+[x]src/types/formSchemas.ts
+[x]src/types/formSchemasStrict.ts
+[x]src/services/forms/saveFormModuleData.ts
+[x]src/services/forms/uploadImageToFormModule.ts
+[x]src/services/forms/uploadPhotoToSupabase.ts
+[x]docs/FORMSAVINGLOGIC.md
+[x]src/pages/FlraFormPage.tsx
+[x]src/types/formSchemaShapes.ts
+[x]src/modules/formmodules/SignatureModuleRenderer.tsx
+[x]src/modules/formmodules/PhotoModuleRenderer.tsx
+[x]src/modules/formmodules/SignatureModule.tsx
+[x]src/modules/formmodules/FormAssetPhotosModule.tsx
+[x]src/modules/formmodules/TaskHazardControlModule.tsx
+[x]src/modules/forms/flra/ActiveFlraDrawer.tsx
+[x]src/modules/forms/flra/FLRAFormStatePlan.md
+[x]src/components/ModuleStateIndicator.tsx
+[x]src/components/SaveQueueStatus.tsx
+[x]src/components/ModuleRenderer.tsx
+[x]src/components/shared/ImageUploaderBase.tsx
+[x]src/components/shared/SignatureCanvas.tsx
+[x]src/hooks/useSaveQueue.ts
+[x]src/hooks/useDebouncedSave.ts
+[x]src/hooks/useModuleState.ts
+[x]src/hooks/useCreateFlraForm.ts
+[x]src/constants/storage.ts
+[x]src/db/supabaseClient.ts
 
 2. Database Mappings
 

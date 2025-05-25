@@ -20,10 +20,8 @@ import {
   ImageUploaderBase,
   ImageUploaderBaseProps,
 } from "../shared/ImageUploaderBase";
-import {
-  FormPhoto,
-  uploadImageToFormModule,
-} from "../../services/forms/uploadImageToFormModule";
+import { uploadImageToFormModule } from "../../services/forms/uploadImageToFormModule";
+import type { FormAssetPhotoResult } from "../../types/formTypes";
 
 type ImageUploaderWithCameraProps = ImageUploaderBaseProps & {
   onCameraError?: (error: Error) => void;
@@ -50,7 +48,7 @@ export const ImageUploaderWithCamera: React.FC<ImageUploaderWithCameraProps> = (
       });
 
       // Call the same upload function directly
-      const photo = await uploadImageToFormModule({
+      const result = await uploadImageToFormModule({
         formId: props.formId,
         formModuleId: props.formModuleId,
         file,
@@ -59,7 +57,11 @@ export const ImageUploaderWithCamera: React.FC<ImageUploaderWithCameraProps> = (
         source: "web",
       });
 
-      props.onUploadSuccess?.(photo);
+      if (result.data) {
+        props.onUploadSuccess?.(result.data);
+      } else if (result.error) {
+        throw result.error;
+      }
     } catch (err) {
       console.error("Camera upload failed:", err);
       props.onUploadError?.(err as Error);

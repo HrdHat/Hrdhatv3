@@ -13,68 +13,36 @@ import {
 const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
 const phoneRegex = /^\+?[1-9]\d{1,14}$/;
 
-// General Information Schema
-export const generalInfoSchema = z
-  .object(generalInfoShape)
-  .partial()
-  .nullable();
+// General Information Schema - strict version for validation
+export const generalInfoSchema = z.object(generalInfoShape);
 
-// Pre-Job Checklist Schema
-export const preJobChecklistSchema = z
-  .object(preJobChecklistShape)
-  .partial()
-  .nullable();
+// Pre-Job Checklist Schema - strict version for validation
+export const preJobChecklistSchema = z.object(preJobChecklistShape);
 
-// PPE Checklist Schema
-export const ppeChecklistSchema = z
-  .object(ppeChecklistShape)
-  .partial()
-  .nullable();
+// PPE Checklist Schema - strict version for validation
+export const ppeChecklistSchema = z.object(ppeChecklistShape);
 
-// Form Instance Schema
-export const formInstanceSchema = z
-  .object(formInstanceShape)
-  .partial()
-  .nullable();
+// Form Instance Schema - strict version for validation
+export const formInstanceSchema = z.object(formInstanceShape);
 
-// Task Hazard Control Schema
-export const taskHazardControlSchema = z
-  .object(taskHazardControlShape)
-  .partial()
-  .nullable();
+// Task Hazard Control Schema - strict version for validation
+export const taskHazardControlSchema = z.object(taskHazardControlShape);
 
-// Form Asset Photo Schema
-export const formAssetPhotoSchema = z.object({
-  ...formAssetPhotoShape,
-  description: z.string().max(500).nullable().optional(),
-  sort_order: z.number().int().nullable().optional(),
-  tag: z.string().max(50).nullable().optional(),
-  source: z.enum(["mobile", "web", "imported"]).nullable().optional(),
-  deleted_at: z.string().datetime().nullable().optional(),
-  metadata: z.record(z.unknown()).nullable().optional(),
-  photo_hash: z.string().max(64).nullable().optional(),
-});
+// Form Asset Photo Schema - strict version for validation
+export const formAssetPhotoSchema = z.object(formAssetPhotoShape);
 
-// Signature Schema
-export const signatureSchema = z.object({
-  ...signatureShape,
-  worker_name: z
-    .string()
-    .min(2, "Worker name must be at least 2 characters")
-    .max(100, "Worker name must be less than 100 characters")
-    .nullable()
-    .optional(),
-});
+// Signature Schema - strict version for validation
+export const signatureSchema = z.object(signatureShape);
 
-// Combined Module Data Schema
+// Combined Module Data Schema for complete form validation
 export const moduleDataSchema = z.object({
-  header: formInstanceSchema.default({}),
-  general: generalInfoSchema.default({}),
-  preJobChecklist: preJobChecklistSchema.default({}),
-  ppeChecklist: ppeChecklistSchema.default({}),
-  taskHazards: z.array(taskHazardControlSchema).default([]),
-  photos: z.array(formAssetPhotoSchema).default([]),
-  signatures: z.array(signatureSchema).default([]),
+  header: formInstanceSchema,
+  general: generalInfoSchema,
+  preJobChecklist: preJobChecklistSchema,
+  ppeChecklist: ppeChecklistSchema,
+  taskHazards: z.array(taskHazardControlSchema),
+  photos: z.array(formAssetPhotoSchema),
+  signatures: z.array(signatureSchema),
 });
 
 // Export types inferred from schemas
