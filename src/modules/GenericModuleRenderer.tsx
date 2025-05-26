@@ -405,8 +405,8 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
   return (
     <div className={`module-wrapper layout-${layoutStyle}`}>
       <h2>
-        {module.template_modules?.name ||
-          module.template_modules?.label ||
+        {module.template_modules?.label ||
+          module.template_modules?.name ||
           module.name ||
           "Form Module"}
       </h2>

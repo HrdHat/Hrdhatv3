@@ -8,6 +8,7 @@ interface PhotoModuleRendererProps {
   formId?: string;
   formModuleId?: string;
   uploadedBy?: string;
+  module?: any;
   [key: string]: any;
 }
 
@@ -19,6 +20,7 @@ const PhotoModuleRenderer: React.FC<PhotoModuleRendererProps> = (props) => (
     formId={props.formId || ""}
     formModuleId={props.formModuleId || ""}
     uploadedBy={props.uploadedBy || ""}
+    module={props.module}
   />
 );
 
