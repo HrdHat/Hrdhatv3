@@ -310,10 +310,10 @@ export async function softDeletePhoto(
       .from(TABLES.formAssetPhotos)
       .update({
         isDeleted: true,
-        // deletedAt will be set by DB trigger
+        deletedAt: new Date().toISOString(),
       })
       .eq(FORM_ASSET_PHOTOS.id, photoId)
-      .is(FORM_ASSET_PHOTOS.isDeleted, false) // Only update if not already deleted
+      .eq(FORM_ASSET_PHOTOS.isDeleted, false) // Only update if not already deleted
       .select()
       .single();
 
@@ -359,7 +359,7 @@ export async function undeletePhoto(
         deletedAt: null,
       })
       .eq(FORM_ASSET_PHOTOS.id, photoId)
-      .is(FORM_ASSET_PHOTOS.isDeleted, true) // Only update if currently deleted
+      .eq(FORM_ASSET_PHOTOS.isDeleted, true) // Only update if currently deleted
       .select()
       .single();
 
@@ -467,7 +467,7 @@ export async function getPhotosForModule(
       .select()
       .eq(FORM_ASSET_PHOTOS.formId, formId)
       .eq(FORM_ASSET_PHOTOS.formModuleId, moduleId)
-      .is(FORM_ASSET_PHOTOS.isDeleted, false)
+      .eq(FORM_ASSET_PHOTOS.isDeleted, false)
       .order(FORM_ASSET_PHOTOS.uploadedAt, { ascending: false });
 
     if (error) {
