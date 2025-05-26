@@ -404,7 +404,12 @@ export const GenericModuleRenderer: React.FC<GenericModuleRendererProps> = ({
 
   return (
     <div className={`module-wrapper layout-${layoutStyle}`}>
-      <h2>{module.name || "Form Module"}</h2>
+      <h2>
+        {module.template_modules?.name ||
+          module.template_modules?.label ||
+          module.name ||
+          "Form Module"}
+      </h2>
       {module.fields?.map((field: Field) => {
         // File and signature fields are handled by specialized modules (not rendered here)
         if (

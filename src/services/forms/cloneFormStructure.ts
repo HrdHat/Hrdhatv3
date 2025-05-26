@@ -10,6 +10,7 @@ import {
  * @param moduleId - The module_id from the modules table (template source)
  * @param formId - The form_id for the new form
  * @param formModuleId - The id of the new form_module instance
+ * @returns The number of fields cloned
  */
 export async function cloneFieldsFromModule({
   moduleId,
@@ -19,7 +20,7 @@ export async function cloneFieldsFromModule({
   moduleId: string;
   formId: string;
   formModuleId: string;
-}) {
+}): Promise<number> {
   const { data: moduleFields, error } = await supabase
     .from(TABLES.templateModuleFields)
     .select("*")
@@ -29,7 +30,7 @@ export async function cloneFieldsFromModule({
   if (error)
     throw new Error(`Error fetching template_module_fields: ${error.message}`);
 
-  if (!moduleFields || moduleFields.length === 0) return; // Nothing to clone
+  if (!moduleFields || moduleFields.length === 0) return 0; // Nothing to clone
 
   const insertPayload = moduleFields.map((field: any) => ({
     [FORM_INSTANCE_MODULE_FIELDS.formId]: formId,
@@ -53,4 +54,6 @@ export async function cloneFieldsFromModule({
     throw new Error(
       `Error inserting form_instance_module_fields: ${insertError.message}`
     );
+
+  return moduleFields.length;
 }

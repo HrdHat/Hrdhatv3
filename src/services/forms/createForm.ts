@@ -6,8 +6,8 @@ import { formatZodErrors, ValidationError } from "../../utils/validation";
 
 export interface CreateFormInput {
   userId?: string;
-  companyId: string;
-  projectId: string;
+  companyId: string | null;
+  projectId: string | null;
   title: string;
   description?: string;
   status?: "draft" | "submitted" | "approved" | "rejected";

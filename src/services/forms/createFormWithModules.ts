@@ -60,8 +60,8 @@ export async function createFormWithModules({
   // 1. Create the form
   const { form, error: formError } = await createForm({
     userId,
-    companyId: companyId || "",
-    projectId: projectId || "",
+    companyId: companyId ?? null,
+    projectId: projectId ?? null,
     title: safeTitle,
     description,
   });

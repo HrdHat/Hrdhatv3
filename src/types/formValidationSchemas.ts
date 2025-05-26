@@ -384,8 +384,8 @@ export type SaveFormModuleDataParams = z.infer<
 export const createFormSchema = z
   .object({
     userId: z.string().uuid("Invalid user ID format"),
-    companyId: z.string().uuid("Invalid company ID format"),
-    projectId: z.string().uuid("Invalid project ID format"),
+    companyId: z.string().uuid("Invalid company ID format").nullable(),
+    projectId: z.string().uuid("Invalid project ID format").nullable(),
     title: z.string().min(1, "Title is required"),
     description: z.string().optional(),
     status: z.enum(["draft", "submitted", "approved", "rejected"]),
@@ -413,6 +413,7 @@ export const formModuleFieldSchema = z
         "boolean",
         "number",
         "date",
+        "time",
         "select",
         "multiselect",
         "file",

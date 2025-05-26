@@ -1,6 +1,6 @@
 /*
  * SOURCE OF TRUTH: Database Schema Definition
- * Last Updated: 2024-03-19
+ * Last Updated: 2024-12-19
  * 
  * This file contains the canonical schema definitions for all database tables.
  * When making changes to the database structure:
@@ -8,6 +8,9 @@
  * 2. Add a comment with the date of the change
  * 3. Document any migrations needed
  * 4. Update corresponding TypeScript types in src/types/formTypes.ts
+ * 
+ * Recent Changes:
+ * - 2024-12-19: Normalized field types in template_module_fields (checkbox -> boolean)
  */
 
 -- HrdHat Schema v2 (schema2.sql)
@@ -38,7 +41,7 @@ CREATE TABLE IF NOT EXISTS template_module_fields (
     module_id uuid NOT NULL REFERENCES template_modules(id),
     name text NOT NULL,
     label text NOT NULL,
-    type text NOT NULL,
+    type text NOT NULL, -- Normalized types: text, boolean, date, time, number, textarea, select
     required boolean NOT NULL DEFAULT false,
     field_order integer NOT NULL,
     default_value text,
@@ -70,17 +73,6 @@ CREATE TABLE IF NOT EXISTS user_form_module_preferences (
 CREATE TABLE IF NOT EXISTS form_templates (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     name text NOT NULL,
-    description text,
-    is_active boolean DEFAULT true,
-    is_enabled boolean NOT NULL DEFAULT true,
-    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
-    updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
-);
-
--- Form templates (list of available form types, legacy)
-CREATE TABLE IF NOT EXISTS form_list (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name text NOT NULL UNIQUE,
     description text,
     is_active boolean DEFAULT true,
     is_enabled boolean NOT NULL DEFAULT true,
@@ -279,6 +271,17 @@ CREATE TABLE IF NOT EXISTS form_asset_photos (
     CONSTRAINT fk_form_asset_photos_form_module_id FOREIGN KEY (form_module_id) REFERENCES form_instance_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
+CREATE TABLE IF NOT EXISTS form_data_entries (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    form_id uuid NOT NULL,
+    module_id uuid NOT NULL,
+    data jsonb NOT NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+    CONSTRAINT fk_form_data_entries_form_id FOREIGN KEY (form_id) REFERENCES form_instances(id) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT fk_form_data_entries_module_id FOREIGN KEY (module_id) REFERENCES template_modules(id) ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
 CREATE TABLE IF NOT EXISTS projects (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id uuid,
@@ -291,6 +294,21 @@ CREATE TABLE IF NOT EXISTS companies (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     name text NOT NULL,
     created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE TABLE IF NOT EXISTS profiles (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email text NOT NULL,
+    full_name text NOT NULL,
+    phone_number text,
+    company text,
+    position_title text,
+    created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+    last_login timestamp with time zone,
+    is_active boolean NOT NULL DEFAULT true,
+    logo_url text,
+    default_form_name text
 );
 
 -- Enable RLS and policies (from live DB)

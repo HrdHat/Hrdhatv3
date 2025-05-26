@@ -214,6 +214,12 @@ export const TEMPLATE_MODULE_FIELDS = {
   projectId: "project_id",
 } as const;
 
+export const COMPANIES = {
+  id: "id",
+  name: "name",
+  createdAt: "created_at",
+} as const;
+
 export const PROFILES = {
   id: "id",
   email: "email",
@@ -227,12 +233,6 @@ export const PROFILES = {
   isActive: "is_active",
   logoUrl: "logo_url",
   defaultFormName: "default_form_name",
-} as const;
-
-export const COMPANIES = {
-  id: "id",
-  name: "name",
-  createdAt: "created_at",
 } as const;
 
 export const PROJECTS = {

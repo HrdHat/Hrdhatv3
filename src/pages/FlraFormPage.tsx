@@ -4,6 +4,8 @@ import { useFlraFormData } from "../hooks/useFlraFormData";
 import { ModuleRenderer } from "../components/ModuleRenderer";
 import { TaskHazardControl } from "../types/formTypes";
 import { ModuleWithRenderer } from "../types/renderer.types";
+import { ValidationProvider } from "../contexts/ValidationContext";
+import { Toaster } from "react-hot-toast";
 
 const FlraFormPage: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
@@ -25,27 +27,55 @@ const FlraFormPage: React.FC = () => {
   return (
     <div>
       <h1>{formData.title}</h1>
-      {formData.modules.map((module) => {
-        // Convert FormModule to ModuleWithRenderer
-        const moduleWithRenderer: ModuleWithRenderer = {
-          ...module,
-          template_modules: {
-            ...module.template_modules,
-            renderer_key: module.template_modules.renderer_key as any,
-          },
-        };
+      <ValidationProvider>
+        {formData.modules.map((module) => {
+          // Convert FormModule to ModuleWithRenderer
+          const moduleWithRenderer: ModuleWithRenderer = {
+            ...module,
+            template_modules: {
+              ...module.template_modules,
+              renderer_key: module.template_modules.renderer_key as any,
+            },
+          };
 
-        return (
-          <ModuleRenderer
-            key={module.id}
-            module={moduleWithRenderer}
-            formId={formId}
-            formModuleId={module.id}
-            value={formValues[module.id]}
-            onChange={(value: unknown) => handleModuleChange(module.id, value)}
-          />
-        );
-      })}
+          return (
+            <ModuleRenderer
+              key={module.id}
+              module={moduleWithRenderer}
+              formId={formId}
+              formModuleId={module.id}
+              value={formValues[module.id]}
+              onChange={(value: unknown) =>
+                handleModuleChange(module.id, value)
+              }
+            />
+          );
+        })}
+      </ValidationProvider>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 5000,
+          style: {
+            background: "#363636",
+            color: "#fff",
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: "#4aed88",
+              secondary: "#fff",
+            },
+          },
+          error: {
+            duration: 5000,
+            iconTheme: {
+              primary: "#ff4b4b",
+              secondary: "#fff",
+            },
+          },
+        }}
+      />
     </div>
   );
 };

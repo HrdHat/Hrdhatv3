@@ -36,7 +36,7 @@ const FormAssetPhotosModule: React.FC<Props> = ({
       }
     };
     fetchPhotos();
-  }, [formId, formModuleId, onChange]);
+  }, [formId, formModuleId]);
 
   const handleUploadSuccess = (photo: FormAssetPhoto) => {
     const newPhotos = [...photos, photo];

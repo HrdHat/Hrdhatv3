@@ -99,7 +99,7 @@ export const ImageUploaderBase: React.FC<ImageUploaderBaseProps> = ({
       }
     };
     fetchPhotos();
-  }, [formId, formModuleId, onUploadError]);
+  }, [formId, formModuleId]);
 
   // Debounced state change notification
   useEffect(() => {
@@ -110,7 +110,7 @@ export const ImageUploaderBase: React.FC<ImageUploaderBaseProps> = ({
       });
     }, 100);
     return () => clearTimeout(timeout);
-  }, [isUploading, uploadedPhotos, onStateChange]);
+  }, [isUploading, uploadedPhotos]);
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
