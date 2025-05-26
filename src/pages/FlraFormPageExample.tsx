@@ -1,0 +1,110 @@
+import React, { useState } from "react";
+import { useParams } from "react-router-dom";
+import { useFlraFormData } from "../hooks/useFlraFormData";
+import { ModuleRenderer } from "../components/ModuleRenderer";
+import GeneralInfoForm from "../components/GeneralInfoForm";
+import { TaskHazardControl } from "../types/formTypes";
+import { ModuleWithRenderer } from "../types/renderer.types";
+import { ValidationProvider } from "../contexts/ValidationContext";
+import { Toaster } from "react-hot-toast";
+
+const FlraFormPageExample: React.FC = () => {
+  const { formId } = useParams<{ formId: string }>();
+  const { formData, loading, error } = useFlraFormData(formId || null);
+  const [formValues, setFormValues] = useState<Record<string, unknown>>({});
+
+  const handleModuleChange = (moduleId: string, value: unknown) => {
+    setFormValues((prev) => ({
+      ...prev,
+      [moduleId]: value,
+    }));
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!formData) return <div>No form data found</div>;
+  if (!formId) return <div>No form ID provided</div>;
+
+  return (
+    <div className="flra-form-page">
+      <h1>{formData.title}</h1>
+      <ValidationProvider>
+        {formData.modules.map((module) => {
+          const rendererKey = module.template_modules?.renderer_key;
+
+          // Use custom GeneralInfoForm for general module
+          if (rendererKey === "general") {
+            return (
+              <GeneralInfoForm
+                key={module.id}
+                formModuleId={module.id}
+                initialData={module.savedData}
+              />
+            );
+          }
+
+          // Use default ModuleRenderer for other modules
+          const moduleWithRenderer: ModuleWithRenderer = {
+            ...module,
+            template_modules: {
+              ...module.template_modules,
+              renderer_key: module.template_modules.renderer_key as any,
+            },
+          };
+
+          return (
+            <ModuleRenderer
+              key={module.id}
+              module={moduleWithRenderer}
+              formModuleId={module.id}
+              value={formValues[module.id]}
+              onChange={(value: unknown) =>
+                handleModuleChange(module.id, value)
+              }
+            />
+          );
+        })}
+      </ValidationProvider>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 5000,
+          style: {
+            background: "#363636",
+            color: "#fff",
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: "#4aed88",
+              secondary: "#fff",
+            },
+          },
+          error: {
+            duration: 5000,
+            iconTheme: {
+              primary: "#ff4b4b",
+              secondary: "#fff",
+            },
+          },
+        }}
+      />
+
+      <style>{`
+        .flra-form-page {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        
+        .flra-form-page h1 {
+          color: #1f2937;
+          margin-bottom: 30px;
+          text-align: center;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default FlraFormPageExample;

@@ -6,8 +6,8 @@ const phoneRegex = /^\+?[1-9]\d{1,14}$/;
 
 // Shared shapes for each module
 export const generalInfoShape = {
-  id: z.string().uuid(),
-  form_module_id: z.string().uuid().nullable().optional(),
+  id: z.string().uuid().optional(),
+  form_module_id: z.string().uuid(),
   project_name: z
     .string()
     .min(2, "Project name must be at least 2 characters")
@@ -65,13 +65,13 @@ export const generalInfoShape = {
     .regex(timeRegex, "Invalid time format (HH:MM)")
     .nullable()
     .optional(),
-  created_at: z.string().datetime(),
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
 };
 
 export const preJobChecklistShape = {
-  id: z.string().uuid(),
-  form_id: z.string().uuid(),
-  form_module_id: z.string().uuid().nullable().optional(),
+  id: z.string().uuid().optional(),
+  form_module_id: z.string().uuid(),
   is_fit_for_duty: z.boolean().nullable().optional(),
   reviewed_work_area_for_hazards: z.boolean().nullable().optional(),
   required_ppe_for_today: z.boolean().nullable().optional(),
@@ -95,13 +95,13 @@ export const preJobChecklistShape = {
   weather_suitable_for_work: z.boolean().nullable().optional(),
   know_designated_first_aid_attendant: z.boolean().nullable().optional(),
   aware_of_site_notices_or_bulletins: z.boolean().nullable().optional(),
-  created_at: z.string().datetime(),
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
 };
 
 export const ppeChecklistShape = {
-  id: z.string().uuid(),
-  form_id: z.string().uuid(),
-  form_module_id: z.string().uuid().nullable().optional(),
+  id: z.string().uuid().optional(),
+  form_module_id: z.string().uuid(),
   ppe_hardhat: z.boolean().nullable().optional(),
   ppe_safety_vest: z.boolean().nullable().optional(),
   ppe_safety_glasses: z.boolean().nullable().optional(),
@@ -119,7 +119,8 @@ export const ppeChecklistShape = {
   platform_boom_lift: z.boolean().nullable().optional(),
   platform_swing_stage: z.boolean().nullable().optional(),
   platform_hydro_lift: z.boolean().nullable().optional(),
-  created_at: z.string().datetime(),
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
 };
 
 export const formInstanceShape = {
@@ -129,7 +130,8 @@ export const formInstanceShape = {
   created_by: z.string().uuid().nullable().optional(),
   status: z.string().nullable().optional(),
   last_modified: z.string().datetime().nullable().optional(),
-  created_at: z.string().datetime(),
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
   auto_archived: z.boolean().nullable().optional(),
   data: z.record(z.unknown()).nullable().optional(),
   company_id: z.string().uuid().nullable().optional(),
@@ -152,9 +154,8 @@ export const formInstanceShape = {
 };
 
 export const taskHazardControlShape = {
-  id: z.string().uuid(),
-  form_id: z.string().uuid(),
-  form_module_id: z.string().uuid().nullable().optional(),
+  id: z.string().uuid().optional(),
+  form_module_id: z.string().uuid(),
   task: z
     .string()
     .min(2, "Task must be at least 2 characters")
@@ -169,22 +170,23 @@ export const taskHazardControlShape = {
     .min(2, "Control must be at least 2 characters")
     .max(500, "Control must be less than 500 characters"),
   risk_level_after: z.number().int().min(1).max(5).nullable().optional(),
-  created_at: z.string().datetime(),
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
 };
 
 export const formAssetPhotoShape = {
-  id: z.string().uuid(),
-  form_id: z.string().uuid(),
-  form_module_id: z.string().uuid().nullable().optional(),
+  id: z.string().uuid().optional(),
+  form_module_id: z.string().uuid(),
   photo_url: z.string().url(),
   photo_description: z.string().max(500).nullable().optional(),
   uploaded_at: z.string().datetime(),
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
 };
 
 export const signatureShape = {
-  id: z.string().uuid(),
-  form_id: z.string().uuid(),
-  form_module_id: z.string().uuid().nullable().optional(),
+  id: z.string().uuid().optional(),
+  form_module_id: z.string().uuid(),
   worker_name: z
     .string()
     .min(2, "Worker name must be at least 2 characters")
@@ -197,4 +199,6 @@ export const signatureShape = {
   signed_by: z.string().uuid().nullable().optional(),
   is_deleted: z.boolean().nullable().optional(),
   deleted_at: z.string().datetime().nullable().optional(),
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
 };

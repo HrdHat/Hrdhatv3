@@ -42,7 +42,6 @@ const FlraFormPage: React.FC = () => {
             <ModuleRenderer
               key={module.id}
               module={moduleWithRenderer}
-              formId={formId}
               formModuleId={module.id}
               value={formValues[module.id]}
               onChange={(value: unknown) =>

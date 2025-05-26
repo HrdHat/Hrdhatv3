@@ -49,7 +49,6 @@ export const ImageUploaderWithCamera: React.FC<ImageUploaderWithCameraProps> = (
 
       // Call the same upload function directly
       const result = await uploadImageToFormModule({
-        formId: props.formId,
         formModuleId: props.formModuleId,
         file,
         uploadedBy: props.uploadedBy,

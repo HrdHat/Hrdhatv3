@@ -7,6 +7,12 @@ import TaskHazardControlModule from "../modules/formmodules/TaskHazardControlMod
 import { RendererKey, ModuleWithRenderer } from "../types/renderer.types";
 import { MissingRenderer } from "./MissingRenderer";
 
+// Import our form components with save logic
+import GeneralInfoForm from "./GeneralInfoForm";
+import PreJobChecklistForm from "./PreJobChecklistForm";
+import PpeChecklistForm from "./PpeChecklistForm";
+
+// ✅ FIXED: Map renderer_key to components with save logic
 export const rendererMap: Record<RendererKey, React.ComponentType<any>> = {
   GenericModuleRenderer,
   FlraHeaderModule,
@@ -15,9 +21,19 @@ export const rendererMap: Record<RendererKey, React.ComponentType<any>> = {
   TaskHazardControlModule,
 };
 
+// ✅ NEW: Map module names to specific form components with save logic
+const moduleNameToComponent: Record<string, React.ComponentType<any>> = {
+  general_information: GeneralInfoForm,
+  pre_job_checklist: PreJobChecklistForm,
+  ppe_platform_inspection: PpeChecklistForm,
+  header: FlraHeaderModule,
+  task_hazard_control: TaskHazardControlModule,
+  photos: PhotoModuleRenderer,
+  signatures: SignatureModuleRenderer,
+};
+
 interface ModuleRendererProps {
   module: ModuleWithRenderer;
-  formId: string;
   formModuleId: string;
   value?: unknown;
   onChange?: (value: unknown) => void;
@@ -26,10 +42,24 @@ interface ModuleRendererProps {
 
 export const ModuleRenderer: React.FC<ModuleRendererProps> = ({
   module,
-  formId,
   formModuleId,
   ...props
 }) => {
+  // ✅ FIXED: First try to map by module name (for components with save logic)
+  const moduleName = module.template_modules?.name || module.name;
+  const ComponentByName = moduleName ? moduleNameToComponent[moduleName] : null;
+
+  if (ComponentByName) {
+    const commonProps = {
+      module,
+      formModuleId,
+      layoutStyle: module.template_modules?.layout_style || "default",
+      ...props,
+    };
+    return <ComponentByName {...commonProps} />;
+  }
+
+  // ✅ FALLBACK: Use renderer_key for legacy components
   const rendererKey =
     module.template_modules?.renderer_key || module.renderer_key;
   if (!rendererKey) {
@@ -48,10 +78,8 @@ export const ModuleRenderer: React.FC<ModuleRendererProps> = ({
     );
   }
 
-  // Ensure formModuleId is passed to all modules that need it
   const commonProps = {
     module,
-    formId,
     formModuleId,
     layoutStyle: module.template_modules?.layout_style || "default",
     ...props,

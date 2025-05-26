@@ -10,7 +10,6 @@ import { softDeletePhoto } from "../../services/forms/uploadPhotoToSupabase";
 type Props = {
   value: FormAssetPhoto[];
   onChange: (photos: FormAssetPhoto[]) => void;
-  formId: string;
   formModuleId: string;
   uploadedBy: string;
   layoutStyle?: "tight" | "loose" | "default";
@@ -20,7 +19,6 @@ type Props = {
 const FormAssetPhotosModule: React.FC<Props> = ({
   value,
   onChange,
-  formId,
   formModuleId,
   uploadedBy,
   layoutStyle = "default",
@@ -28,17 +26,16 @@ const FormAssetPhotosModule: React.FC<Props> = ({
 }) => {
   const [photos, setPhotos] = useState<FormAssetPhoto[]>(value || []);
 
-  // Fetch photos on mount and when formId/formModuleId changes
   useEffect(() => {
     const fetchPhotos = async () => {
-      const result = await getFormModulePhotos(formId, formModuleId);
+      const result = await getFormModulePhotos(formModuleId);
       if (result.data) {
         setPhotos(result.data);
         onChange(result.data);
       }
     };
     fetchPhotos();
-  }, [formId, formModuleId]);
+  }, [formModuleId]);
 
   const handleUploadSuccess = (photo: FormAssetPhoto) => {
     const newPhotos = [...photos, photo];
@@ -92,7 +89,6 @@ const FormAssetPhotosModule: React.FC<Props> = ({
         <AddPhotosButton
           onUploadSuccess={handleUploadSuccess}
           onUploadError={handleUploadError}
-          formId={formId}
           formModuleId={formModuleId}
           uploadedBy={uploadedBy}
         />

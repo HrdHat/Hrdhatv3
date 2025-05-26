@@ -29,7 +29,6 @@ import { toast } from "react-hot-toast";
 // import "../styles/components/image-uploader.css"; // commented out as per request
 
 export type ImageUploaderBaseProps = {
-  formId: string;
   formModuleId: string;
   uploadedBy: string;
   tag?: string;
@@ -72,7 +71,6 @@ const UploadProgress: React.FC<UploadProgressProps> = ({ statuses }) => {
 };
 
 export const ImageUploaderBase: React.FC<ImageUploaderBaseProps> = ({
-  formId,
   formModuleId,
   uploadedBy,
   tag,
@@ -87,10 +85,9 @@ export const ImageUploaderBase: React.FC<ImageUploaderBaseProps> = ({
   const [uploadedPhotos, setUploadedPhotos] = useState<FormAssetPhoto[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch photos on mount and when formId/formModuleId changes
   useEffect(() => {
     const fetchPhotos = async () => {
-      const result = await getFormModulePhotos(formId, formModuleId);
+      const result = await getFormModulePhotos(formModuleId);
       if (result.data) {
         setUploadedPhotos(result.data);
       } else if (result.error) {
@@ -99,9 +96,8 @@ export const ImageUploaderBase: React.FC<ImageUploaderBaseProps> = ({
       }
     };
     fetchPhotos();
-  }, [formId, formModuleId]);
+  }, [formModuleId]);
 
-  // Debounced state change notification
   useEffect(() => {
     const timeout = setTimeout(() => {
       onStateChange?.({
@@ -129,7 +125,6 @@ export const ImageUploaderBase: React.FC<ImageUploaderBaseProps> = ({
       const file = files[i];
       try {
         const result = await uploadImageToFormModule({
-          formId,
           formModuleId,
           file,
           uploadedBy,

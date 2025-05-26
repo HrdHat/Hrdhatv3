@@ -123,7 +123,7 @@ const FormInstanceModule: React.FC<FormInstanceModuleProps> = ({
 
     // Check if ID is taken if there's a value
     if (value) {
-      const isTaken = await isUserFormIdTaken(value, formModuleId);
+      const isTaken = await isUserFormIdTaken(value);
       if (isTaken) {
         toast("Another form already uses this ID. You can still save it.", {
           icon: "⚠️",

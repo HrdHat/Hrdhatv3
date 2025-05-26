@@ -13,7 +13,7 @@
  * - Displays photo count badge
  *
  * Designed to work within any dynamic FLRA module, with all data
- * scoped to form_id + form_module_id.
+ * scoped to form_module_id only.
  */
 
 import React, { useState } from "react";
@@ -22,7 +22,6 @@ import { FormAssetPhoto } from "../../../types/formTypes";
 // import "../../../styles/components/image-uploader.css";
 
 export type AddPhotosButtonProps = {
-  formId: string;
   formModuleId: string;
   uploadedBy: string;
   tag?: string;
@@ -34,7 +33,6 @@ export type AddPhotosButtonProps = {
 };
 
 export const AddPhotosButton: React.FC<AddPhotosButtonProps> = ({
-  formId,
   formModuleId,
   uploadedBy,
   tag,
@@ -75,7 +73,6 @@ export const AddPhotosButton: React.FC<AddPhotosButtonProps> = ({
       {isExpanded && (
         <div className="image-uploader__container">
           <ImageUploaderBase
-            formId={formId}
             formModuleId={formModuleId}
             uploadedBy={uploadedBy}
             tag={tag}

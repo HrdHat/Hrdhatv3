@@ -154,6 +154,7 @@ export const moduleFieldSchemaLoose = z.discriminatedUnion("type", [
 export const generalInfoSchema = z
   .object({
     id: z.string().uuid("Invalid UUID format"),
+    form_id: z.string().uuid("Invalid form ID format"),
     form_module_id: z.string().uuid("Invalid module ID format").nullable(),
     project_name: z.string().min(1, "Required"),
     project_address: z.string().nullable(),

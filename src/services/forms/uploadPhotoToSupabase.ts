@@ -6,13 +6,18 @@ import {
 } from "../../constants/database";
 import {
   uploadPhotoOptionsSchema,
+  uploadPhotoOptionsSchemaModuleOnly,
   photoRecordSchema,
+  photoRecordSchemaModuleOnly,
   PhotoOperationResult,
   ALLOWED_MIME_TYPES,
   AllowedMimeType,
   PhotoMetadata,
+  PhotoMetadataModuleOnly,
   UploadPhotoOptions,
+  UploadPhotoOptionsModuleOnly,
   PhotoRecord,
+  PhotoRecordModuleOnly,
 } from "./photoValidation";
 import { z } from "zod";
 import { FormAssetPhoto } from "../../types/formTypes";
@@ -160,6 +165,158 @@ export async function uploadPhotoToSupabase(
     const { data, error: dbError } = await supabase
       .from(TABLES.formAssetPhotos)
       .insert(photoRecord)
+      .select()
+      .single();
+
+    if (dbError) {
+      return {
+        success: false,
+        error: {
+          message: "Failed to save photo metadata",
+          details: dbError.message,
+        },
+      };
+    }
+
+    return {
+      success: true,
+      data: recordValidation.data,
+    };
+  } catch (error) {
+    console.error("Error uploading photo:", error);
+    return {
+      success: false,
+      error: {
+        message: "Unexpected error during photo upload",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+    };
+  }
+}
+
+/**
+ * ✅ NEW: Uploads a single photo using only form_module_id (no form_id)
+ */
+export async function uploadPhotoToSupabaseModuleOnly(
+  options: UploadPhotoOptionsModuleOnly
+): Promise<PhotoOperationResult> {
+  try {
+    const validation = uploadPhotoOptionsSchemaModuleOnly.safeParse(options);
+    if (!validation.success) {
+      return {
+        success: false,
+        error: {
+          message: "Invalid upload options",
+          validationErrors: validation.error,
+        },
+      };
+    }
+
+    const { file, metadata, moduleId, uploadedBy, ...rest } = validation.data;
+
+    // Validate MIME type
+    if (!ALLOWED_MIME_TYPES.includes(file.type as AllowedMimeType)) {
+      return {
+        success: false,
+        error: {
+          message: "Unsupported file type",
+          details: `File type ${
+            file.type
+          } is not allowed. Supported types: ${ALLOWED_MIME_TYPES.join(", ")}`,
+        },
+      };
+    }
+
+    // Generate storage path using only moduleId
+    const storagePath = `photos/modules/${moduleId}/${metadata.id}.${
+      file.type.split("/")[1]
+    }`;
+
+    // Upload to storage
+    const { error: uploadError } = await supabase.storage
+      .from(STORAGE_BUCKETS.photos)
+      .upload(storagePath, file, {
+        cacheControl: "3600",
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      return {
+        success: false,
+        error: {
+          message: "Failed to upload photo",
+          details: uploadError.message,
+        },
+      };
+    }
+
+    // Get signed URL
+    const { data: signedData, error: signedUrlError } = await supabase.storage
+      .from(STORAGE_BUCKETS.photos)
+      .createSignedUrl(storagePath, 3600);
+
+    if (signedUrlError || !signedData?.signedUrl) {
+      return {
+        success: false,
+        error: {
+          message: "Failed to get signed URL for photo",
+          details: signedUrlError?.message,
+        },
+      };
+    }
+
+    // Prepare photo record for database
+    const photoRecord = {
+      ...metadata,
+      photoUrl: storagePath,
+      uploadedAt: new Date().toISOString(),
+      uploadedBy,
+      isDeleted: false,
+      deletedAt: null,
+      ...rest,
+      metadata: {
+        originalName: file.name,
+        mimeType: file.type,
+        size: file.size,
+        uploadedAt: new Date().toISOString(),
+        uploadedBy,
+        signedUrl: signedData.signedUrl,
+        ...rest,
+      },
+    };
+
+    const recordValidation = photoRecordSchemaModuleOnly.safeParse(photoRecord);
+    if (!recordValidation.success) {
+      return {
+        success: false,
+        error: {
+          message: "Invalid photo record",
+          validationErrors: recordValidation.error,
+        },
+      };
+    }
+
+    // Save to database with form_module_id mapping
+    const dbRecord = {
+      id: photoRecord.id,
+      form_module_id: photoRecord.moduleId,
+      photo_url: photoRecord.photoUrl,
+      photo_description: photoRecord.photo_description || null,
+      uploaded_at: photoRecord.uploadedAt,
+      uploaded_by: photoRecord.uploadedBy,
+      file_name: photoRecord.name,
+      file_size: photoRecord.size,
+      type: photoRecord.type,
+      is_deleted: photoRecord.isDeleted || false,
+      deleted_at: photoRecord.deletedAt || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error: dbError } = await supabase
+      .from(TABLES.formAssetPhotos)
+      .insert(dbRecord)
       .select()
       .single();
 
@@ -484,6 +641,86 @@ export async function getPhotosForModule(
     const photos = (data || []).map((record) => ({
       id: record.id,
       formId: record.form_id,
+      moduleId: record.form_module_id,
+      type: record.type,
+      name: record.file_name,
+      size: record.file_size,
+      timestamp: new Date(record.uploaded_at).getTime(),
+      uploadedBy: record.uploaded_by,
+      photoUrl: record.photo_url,
+      uploadedAt: record.uploaded_at,
+      metadata: {
+        originalName: record.file_name,
+        mimeType: record.type,
+        size: record.file_size,
+        uploadedAt: record.uploaded_at,
+        uploadedBy: record.uploaded_by,
+      },
+      isDeleted: record.is_deleted,
+      deletedAt: record.deleted_at,
+    }));
+
+    return {
+      success: true,
+      data: photos,
+    };
+  } catch (error) {
+    console.error("Error fetching photos:", error);
+    return {
+      success: false,
+      error: {
+        message: "Unexpected error while fetching photos",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+    };
+  }
+}
+
+/**
+ * ✅ NEW: Fetches photos for a form module using only form_module_id
+ */
+export async function getPhotosForModuleOnly(
+  moduleId: string
+): Promise<PhotoOperationResult> {
+  try {
+    /**
+     * VALIDATION RULE: Module ID must pass Zod validation before processing.
+     */
+    const moduleIdValidation = z
+      .string()
+      .uuid("Invalid module ID format")
+      .safeParse(moduleId);
+
+    if (!moduleIdValidation.success) {
+      return {
+        success: false,
+        error: {
+          message: "Invalid module ID",
+          validationErrors: moduleIdValidation.error,
+        },
+      };
+    }
+
+    const { data, error } = await supabase
+      .from(TABLES.formAssetPhotos)
+      .select()
+      .eq(FORM_ASSET_PHOTOS.formModuleId, moduleId)
+      .eq(FORM_ASSET_PHOTOS.isDeleted, false)
+      .order(FORM_ASSET_PHOTOS.uploadedAt, { ascending: false });
+
+    if (error) {
+      return {
+        success: false,
+        error: {
+          message: "Failed to fetch photos",
+          details: error.message,
+        },
+      };
+    }
+
+    // Map the database records to PhotoRecord type
+    const photos = (data || []).map((record) => ({
+      id: record.id,
       moduleId: record.form_module_id,
       type: record.type,
       name: record.file_name,

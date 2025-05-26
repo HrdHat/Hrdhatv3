@@ -5,7 +5,6 @@ import { FormAssetPhoto } from "../../types/formTypes";
 interface PhotoModuleRendererProps {
   value?: FormAssetPhoto[];
   onChange?: (photos: FormAssetPhoto[]) => void;
-  formId?: string;
   formModuleId?: string;
   uploadedBy?: string;
   module?: any;
@@ -17,7 +16,6 @@ const PhotoModuleRenderer: React.FC<PhotoModuleRendererProps> = (props) => (
     {...props}
     value={props.value || []}
     onChange={props.onChange || (() => {})}
-    formId={props.formId || ""}
     formModuleId={props.formModuleId || ""}
     uploadedBy={props.uploadedBy || ""}
     module={props.module}

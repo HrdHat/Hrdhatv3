@@ -54,39 +54,30 @@ export async function generateFormNumber(): Promise<string> {
 }
 
 /**
- * Checks if a user-supplied form ID is already taken for a given form module.
+ * Checks if a user-supplied form ID is already taken in the form_instances table.
+ * This checks for global uniqueness of user form IDs across all form instances.
  */
-export async function isUserFormIdTaken(
-  userFormId: string,
-  formModuleId: string
-): Promise<boolean> {
+export async function isUserFormIdTaken(userFormId: string): Promise<boolean> {
   if (!userFormId) return false;
-
-  // Validate that required fields exist
-  validateFormField("userFormId");
-  validateFormField("formModuleId");
 
   console.log("Supabase Query:", {
     table: TABLES.formInstances,
     select: FORM_INSTANCE_FIELDS.id,
     filters: {
-      [FORM_INSTANCE_FIELDS.userFormId]: userFormId,
-      [FORM_INSTANCE_FIELDS.formModuleId]: formModuleId,
+      user_form_id: userFormId,
     },
     fullQuery: {
       from: TABLES.formInstances,
       select: FORM_INSTANCE_FIELDS.id,
       eq: {
-        [FORM_INSTANCE_FIELDS.userFormId]: userFormId,
-        [FORM_INSTANCE_FIELDS.formModuleId]: formModuleId,
+        user_form_id: userFormId,
       },
     },
   });
   const { data, error } = await supabase
     .from(TABLES.formInstances)
     .select(FORM_INSTANCE_FIELDS.id)
-    .eq(FORM_INSTANCE_FIELDS.userFormId, userFormId)
-    .eq(FORM_INSTANCE_FIELDS.formModuleId, formModuleId)
+    .eq("user_form_id", userFormId)
     .maybeSingle();
   return !!data;
 }

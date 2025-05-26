@@ -7,6 +7,13 @@ import {
   FORM_INSTANCE_MODULE_FIELDS,
   TEMPLATE_MODULES,
 } from "../constants/database";
+import { fetchGeneralInfoData } from "../services/forms/fetchGeneralInfoData";
+import { fetchHeaderData } from "../services/forms/fetchHeaderData";
+import { fetchPreJobChecklistData } from "../services/forms/fetchPreJobChecklistData";
+import { fetchPpeChecklistData } from "../services/forms/fetchPpeChecklistData";
+import { fetchTaskHazardsData } from "../services/forms/fetchTaskHazardsData";
+import { fetchPhotosData } from "../services/forms/fetchPhotosData";
+import { fetchSignaturesData } from "../services/forms/fetchSignaturesData";
 
 interface FormField {
   id: string;
@@ -32,6 +39,7 @@ interface FormModule {
     [TEMPLATE_MODULES.version]: number;
   };
   fields: FormField[];
+  savedData?: any; // Add saved module data
 }
 
 interface FormData {
@@ -80,9 +88,10 @@ export const useFlraFormData = (formId: string | null) => {
 
         if (modulesError) throw modulesError;
 
-        // Fetch fields for each module
-        const modulesWithFields = await Promise.all(
+        // Fetch fields and saved data for each module
+        const modulesWithFieldsAndData = await Promise.all(
           (modules as any[]).map(async (module) => {
+            // Fetch field definitions
             const { data: fields, error: fieldsError } = await supabase
               .from(TABLES.formInstanceModuleFields)
               .select("*")
@@ -91,10 +100,38 @@ export const useFlraFormData = (formId: string | null) => {
 
             if (fieldsError) throw fieldsError;
 
-            // Always include modules, even if fields is empty
+            // Fetch saved data based on module type
+            let savedData = null;
+            const rendererKey =
+              module.template_modules?.[TEMPLATE_MODULES.rendererKey];
+
+            if (rendererKey === "general") {
+              const { data } = await fetchGeneralInfoData(module.id);
+              savedData = data;
+            } else if (rendererKey === "header") {
+              const { data } = await fetchHeaderData(formId);
+              savedData = data;
+            } else if (rendererKey === "preJobChecklist") {
+              const { data } = await fetchPreJobChecklistData(module.id);
+              savedData = data;
+            } else if (rendererKey === "ppeChecklist") {
+              const { data } = await fetchPpeChecklistData(module.id);
+              savedData = data;
+            } else if (rendererKey === "taskHazards") {
+              const { data } = await fetchTaskHazardsData(module.id);
+              savedData = data;
+            } else if (rendererKey === "photos") {
+              const { data } = await fetchPhotosData(module.id);
+              savedData = data;
+            } else if (rendererKey === "signatures") {
+              const { data } = await fetchSignaturesData(module.id);
+              savedData = data;
+            }
+
             return {
               ...module,
               fields: fields || [],
+              savedData,
             };
           })
         );
@@ -102,18 +139,19 @@ export const useFlraFormData = (formId: string | null) => {
         // Debug: log all loaded modules and their renderer_key, name, and version
         console.log(
           "Loaded modules:",
-          modulesWithFields.map((m) => ({
+          modulesWithFieldsAndData.map((m: any) => ({
             id: m.id,
             name: m.template_modules?.[TEMPLATE_MODULES.name],
             renderer: m.template_modules?.[TEMPLATE_MODULES.rendererKey],
             version: m.template_modules?.[TEMPLATE_MODULES.version],
             fields: m.fields?.length ?? 0,
+            hasSavedData: !!m.savedData,
           }))
         );
 
         setFormData({
           ...form,
-          modules: modulesWithFields,
+          modules: modulesWithFieldsAndData,
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");

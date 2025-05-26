@@ -69,11 +69,17 @@ import {
   PpeEquipmentChecklist,
   SaveFormModuleDataParams,
 } from "../../types/formTypes";
-import { TABLES, FORM_DATA_ENTRIES } from "../../constants/database";
+import { TABLES } from "../../constants/database";
 import {
   schemaMap,
   saveFormModuleDataParamsSchema,
 } from "../../types/formValidationSchemas";
+import {
+  ModuleKey,
+  getConflictColumn,
+  buildModulePayload,
+} from "../../constants/moduleConfig";
+
 import { z } from "zod";
 import {
   formatZodErrors,
@@ -81,15 +87,8 @@ import {
   ValidationError,
 } from "../../utils/validation";
 
-// Supported module keys for typed tables
-export type ModuleKey =
-  | "header"
-  | "general"
-  | "preJobChecklist"
-  | "ppeChecklist"
-  | "taskHazards"
-  | "photos"
-  | "signatures";
+// Re-export ModuleKey for external use
+export type { ModuleKey };
 
 // Data type mapping for each module
 export type ModuleData =
@@ -169,55 +168,33 @@ export async function saveFormModuleData({
     };
   }
 
-  let payload: Record<string, any>;
+  // Build payload with appropriate foreign keys using centralized config
+  const payload = buildModulePayload(data, moduleKey, formId, moduleId);
 
-  // Handle array (bulk) upserts
-  if (Array.isArray(data)) {
-    const { error } = await supabase.from(table).upsert(
-      data.map((row) => ({
-        ...row,
-        [FORM_DATA_ENTRIES.formId]: formId,
-        ...(moduleId && { form_module_id: moduleId }),
-      })),
-      { onConflict: "id" } // Array modules use id as primary key
-    );
-    if (import.meta.env.DEV) {
-      if (error) {
-        console.error(
-          `[saveFormModuleData] Error in bulk upsert to ${table}:`,
-          error.message
-        );
-      }
-      console.debug(`[saveFormModuleData] Bulk upsert to ${table}`, {
-        formId,
-        moduleKey,
-        data,
-      });
-    }
-    return { success: !error, error: error?.message };
-  }
+  // Determine conflict resolution using centralized config
+  const conflictColumn = getConflictColumn(moduleKey, Array.isArray(data));
 
-  // Handle single object upsert
-  const { error } = await supabase.from(table).upsert(
-    {
-      ...data,
-      [FORM_DATA_ENTRIES.formId]: formId,
-      ...(moduleId && moduleKey !== "header" && { form_module_id: moduleId }),
-    },
-    { onConflict: moduleKey === "header" ? "id" : "form_module_id" } // Header uses id, others use form_module_id
-  );
+  // Perform upsert operation
+  const { error } = await supabase
+    .from(table)
+    .upsert(payload, { onConflict: conflictColumn });
+
   if (import.meta.env.DEV) {
     if (error) {
       console.error(
-        `[saveFormModuleData] Error in single upsert to ${table}:`,
+        `[saveFormModuleData] Error in upsert to ${table}:`,
         error.message
       );
     }
-    console.debug(`[saveFormModuleData] Single upsert to ${table}`, {
+    console.debug(`[saveFormModuleData] Upsert to ${table}`, {
       formId,
       moduleKey,
       data,
+      payload,
+      conflictColumn,
+      isArray: Array.isArray(data),
     });
   }
+
   return { success: !error, error: error?.message };
 }

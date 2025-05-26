@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { TaskHazardControl } from "../../types/formTypes";
+import { supabase } from "../../db/supabaseClient";
+import useDebouncedValue from "../../hooks/useDebouncedValue";
 
 type Props = {
   value: TaskHazardControl[];
   onChange: (rows: TaskHazardControl[]) => void;
   layoutStyle?: "tight" | "loose" | "default";
+  formModuleId?: string;
 };
 
 const TaskHazardControlModule: React.FC<Props> = ({
   value = [],
   onChange,
   layoutStyle = "default",
+  formModuleId = "",
 }) => {
   const [taskHazards, setTaskHazards] = useState<TaskHazardControl[]>(
     value && value.length > 0
@@ -18,8 +22,7 @@ const TaskHazardControlModule: React.FC<Props> = ({
       : [
           {
             id: crypto.randomUUID(),
-            form_id: "",
-            form_module_id: null,
+            form_module_id: formModuleId,
             task: "",
             hazard: "",
             risk_level_before: null,
@@ -30,6 +33,62 @@ const TaskHazardControlModule: React.FC<Props> = ({
         ]
   );
 
+  const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">(
+    "idle"
+  );
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
+  // ✅ NEW: Debounce the task hazards array by 500ms
+  const debounced = useDebouncedValue(taskHazards, 500);
+
+  // ✅ NEW: Save to edge function when debounced data changes
+  useEffect(() => {
+    // Skip if no formModuleId or if data hasn't actually changed
+    if (!formModuleId || JSON.stringify(debounced) === JSON.stringify(value)) {
+      return;
+    }
+
+    // Skip if all rows are empty (initial state)
+    const hasData = debounced.some(
+      (row) => row.task || row.hazard || row.control
+    );
+    if (!hasData) return;
+
+    setStatus("saving");
+    setErrorMessage("");
+
+    (async () => {
+      try {
+        const payload = {
+          moduleKey: "taskHazards",
+          data: debounced,
+          moduleId: formModuleId,
+        };
+
+        const { error } = await supabase.functions.invoke(
+          "saveFormModuleData",
+          {
+            body: payload,
+          }
+        );
+
+        if (error) {
+          console.error("Save failed:", error);
+          setStatus("error");
+          setErrorMessage(error.message || "Save failed");
+        } else {
+          setStatus("success");
+          // Clear success status after 2 seconds
+          setTimeout(() => setStatus("idle"), 2000);
+        }
+      } catch (err) {
+        console.error("Save error:", err);
+        setStatus("error");
+        setErrorMessage(err instanceof Error ? err.message : "Unknown error");
+      }
+    })();
+  }, [debounced, formModuleId, value]);
+
   useEffect(() => {
     setTaskHazards(
       value && value.length > 0
@@ -37,8 +96,7 @@ const TaskHazardControlModule: React.FC<Props> = ({
         : [
             {
               id: crypto.randomUUID(),
-              form_id: "",
-              form_module_id: null,
+              form_module_id: formModuleId,
               task: "",
               hazard: "",
               risk_level_before: null,
@@ -48,25 +106,24 @@ const TaskHazardControlModule: React.FC<Props> = ({
             },
           ]
     );
-  }, [value]);
+  }, [value, formModuleId]);
 
   useEffect(() => {
     if (!value || value.length === 0) {
-      onChange([
-        {
-          id: crypto.randomUUID(),
-          form_id: "",
-          form_module_id: null,
-          task: "",
-          hazard: "",
-          risk_level_before: null,
-          control: "",
-          risk_level_after: null,
-          created_at: new Date().toISOString(),
-        },
-      ]);
+      const initialRow = {
+        id: crypto.randomUUID(),
+        form_module_id: formModuleId,
+        task: "",
+        hazard: "",
+        risk_level_before: null,
+        control: "",
+        risk_level_after: null,
+        created_at: new Date().toISOString(),
+      };
+      setTaskHazards([initialRow]);
+      onChange([initialRow]);
     }
-  }, []); // Only run once on mount
+  }, [formModuleId]);
 
   const updateField = (
     idx: number,
@@ -84,6 +141,7 @@ const TaskHazardControlModule: React.FC<Props> = ({
 
     setTaskHazards(updatedHazards);
     onChange(updatedHazards);
+    setStatus("idle"); // Reset status when user makes changes
   };
 
   const addTaskHazard = () => {
@@ -91,8 +149,7 @@ const TaskHazardControlModule: React.FC<Props> = ({
       ...taskHazards,
       {
         id: crypto.randomUUID(),
-        form_id: "",
-        form_module_id: null,
+        form_module_id: formModuleId,
         task: "",
         hazard: "",
         risk_level_before: null,
@@ -115,6 +172,18 @@ const TaskHazardControlModule: React.FC<Props> = ({
   return (
     <section className={`module-wrapper layout-${layoutStyle}`}>
       <h2>Task Hazard Control Module</h2>
+
+      {/* ✅ NEW: Status indicator */}
+      <div className="save-status">
+        {status === "saving" && <div className="status saving">💾 Saving…</div>}
+        {status === "success" && <div className="status success">✅ Saved</div>}
+        {status === "error" && (
+          <div className="status error">
+            ❌ Save failed{errorMessage && `: ${errorMessage}`}
+          </div>
+        )}
+      </div>
+
       <div>
         {taskHazards.map((row, idx) => (
           <div key={idx}>
