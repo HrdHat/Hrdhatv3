@@ -40,9 +40,8 @@ export const FORM_INSTANCE_FIELDS = {
   version: "version",
   submittedAt: "submitted_at",
   userId: "user_id",
-  formModuleId: "form_module_id",
   formDate: "form_date",
-  userFormId: "user_form_id",
+  updatedAt: "updated_at",
 } as const;
 
 export const FORM_INSTANCE_MODULE_FIELDS = {
@@ -82,6 +81,7 @@ export const FORM_INSTANCE_SIGNATURES = {
   signedBy: "signed_by",
   isDeleted: "is_deleted",
   deletedAt: "deleted_at",
+  updatedAt: "updated_at",
 } as const;
 
 export const FORM_INSTANCE_GENERAL_INFO = {
@@ -98,6 +98,7 @@ export const FORM_INSTANCE_GENERAL_INFO = {
   startTime: "start_time",
   endTime: "end_time",
   createdAt: "created_at",
+  updatedAt: "updated_at",
 } as const;
 
 export const FORM_INSTANCE_HAZARDS = {
@@ -110,6 +111,7 @@ export const FORM_INSTANCE_HAZARDS = {
   control: "control",
   riskLevelAfter: "risk_level_after",
   createdAt: "created_at",
+  updatedAt: "updated_at",
 } as const;
 
 export const FORM_INSTANCE_PPE_PLATFORM = {
@@ -134,6 +136,7 @@ export const FORM_INSTANCE_PPE_PLATFORM = {
   platformSwingStage: "platform_swing_stage",
   platformHydroLift: "platform_hydro_lift",
   createdAt: "created_at",
+  updatedAt: "updated_at",
 } as const;
 
 export const FORM_INSTANCE_PRE_JOB_CHECKLIST = {
@@ -163,6 +166,7 @@ export const FORM_INSTANCE_PRE_JOB_CHECKLIST = {
   knowDesignatedFirstAidAttendant: "know_designated_first_aid_attendant",
   awareOfSiteNoticesOrBulletins: "aware_of_site_notices_or_bulletins",
   createdAt: "created_at",
+  updatedAt: "updated_at",
 } as const;
 
 export const FORM_TEMPLATES = {
@@ -266,16 +270,10 @@ export const FORM_ASSET_PHOTOS = {
   formId: "form_id",
   formModuleId: "form_module_id",
   photoUrl: "photo_url",
-  photoHash: "photo_hash",
-  metadata: "metadata",
-  uploadedBy: "uploaded_by",
-  uploadedAt: "uploaded_at",
-  isDeleted: "is_deleted",
-  deletedAt: "deleted_at",
   photoDescription: "photo_description",
-  tag: "tag",
-  source: "source",
-  sortOrder: "sort_order",
+  uploadedAt: "uploaded_at",
+  updatedAt: "updated_at",
+  isDeleted: "is_deleted",
 } as const;
 
 export const STORAGE_BUCKETS = {

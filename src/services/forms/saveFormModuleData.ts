@@ -102,7 +102,7 @@ export type ModuleData =
   | Signature[];
 
 // Map module keys to their corresponding tables
-const tableMap: Record<ModuleKey, string> = {
+export const tableMap: Record<ModuleKey, string> = {
   header: TABLES.formInstances,
   general: TABLES.formInstanceGeneralInfo,
   preJobChecklist: TABLES.formInstancePreJobChecklist,
