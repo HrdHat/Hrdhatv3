@@ -15,8 +15,7 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { forms, isLoading, error, refresh, deleteForm } =
-    useActiveForms();
+  const { forms, isLoading, error, refresh, deleteForm } = useActiveForms();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -97,15 +96,8 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({
 
   // Memoize the forms list rendering
   const formsList = useMemo(() => {
-    if (isLoading || error) return null;
     if (forms.length === 0) {
-      return (
-        <div
-          style={{ padding: "1rem", textAlign: "center", color: "#666" }}
-        >
-          No active forms. Create your first FLRA using the sidebar button!
-        </div>
-      );
+      return <div>No active forms available</div>;
     }
     return (
       <ul style={{ listStyle: "none", padding: 0 }}>
@@ -118,7 +110,8 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({
               <strong>{form.title}</strong>
               <br />
               <small>
-                {form.form_number} • {form.status} • {new Date(form.created_at).toLocaleDateString()}
+                {form.form_number} • {form.status} •{" "}
+                {new Date(form.created_at).toLocaleDateString()}
               </small>
             </div>
             <div>
@@ -155,7 +148,7 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({
         ))}
       </ul>
     );
-  }, [forms, isLoading, error, isDeleting]);
+  }, [forms, isDeleting]);
 
   if (!isOpen) {
     return null;
@@ -186,7 +179,7 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({
       )}
 
       {/* Forms List */}
-      {formsList}
+      {!isLoading && !error && formsList}
 
       {/* Delete confirmation prompt */}
       {pendingDeleteId && (
