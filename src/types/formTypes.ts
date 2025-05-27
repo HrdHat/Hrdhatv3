@@ -31,12 +31,12 @@ export type GeneralInformation = {
   form_module_id: string; // ✅ REQUIRED, not nullable
   project_name?: string | null;
   project_address?: string | null;
-  task_location?: string | null;
+  location?: string | null;
   supervisor_name?: string | null;
   supervisor_contact?: string | null;
-  date?: string | null;
+  form_date?: string | null;
   crew_members_count?: number | null;
-  task_description?: string | null;
+  work_description?: string | null;
   start_time?: string | null;
   end_time?: string | null;
   created_at: string;
@@ -109,7 +109,7 @@ export type FormAssetPhoto = {
 export type Signature = {
   id: string;
   form_module_id: string; // ✅ REQUIRED, not nullable
-  worker_name: string;
+  signer_name: string;
   signature_url: string;
   signed_at: string;
   signature_hash?: string | null;

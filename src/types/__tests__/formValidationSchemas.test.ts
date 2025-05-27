@@ -33,16 +33,17 @@ const validPayloads: Record<ModuleKey, any> = {
   },
   general: {
     id: "123e4567-e89b-12d3-a456-426614174005",
+    form_id: "123e4567-e89b-12d3-a456-426614174000",
     form_module_id: "123e4567-e89b-12d3-a456-426614174006",
     project_name: "Test Project",
     project_address: "123 Test St",
-    task_location: "Site A",
+    location: "Site A",
     supervisor_name: "John Doe",
     supervisor_contact: "+1234567890",
-    date: "2024-03-20",
+    form_date: "2024-01-01",
     crew_members_count: 5,
-    task_description: "Test task description",
-    start_time: "09:00",
+    work_description: "Test task description",
+    start_time: "08:00",
     end_time: "17:00",
     created_at: "2024-03-20T12:00:00Z",
   },
@@ -123,7 +124,7 @@ const validPayloads: Record<ModuleKey, any> = {
       id: "123e4567-e89b-12d3-a456-426614174019",
       form_id: "123e4567-e89b-12d3-a456-426614174020",
       form_module_id: "123e4567-e89b-12d3-a456-426614174021",
-      worker_name: "John Doe",
+      signer_name: "John Doe",
       signature_url: "https://example.com/signature.jpg",
       signed_at: "2024-03-20T12:00:00Z",
       signature_hash: null,
@@ -323,7 +324,7 @@ describe("Form Validation Schemas", () => {
       const result = schemaMap.general.safeParse({
         project_name: "", // Required
         supervisor_contact: "invalid-phone",
-        date: "invalid-date",
+        form_date: "invalid-date",
       });
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -440,12 +441,12 @@ describe("Form Validation Schemas", () => {
         form_module_id: null,
         project_name: "Test Project",
         project_address: null,
-        task_location: null,
+        location: null,
         supervisor_name: null,
         supervisor_contact: null,
-        date: "invalid",
+        form_date: "invalid",
         crew_members_count: null,
-        task_description: null,
+        work_description: null,
         start_time: "25:00",
         end_time: null,
         created_at: "2024-03-20T12:00:00Z",
@@ -453,7 +454,7 @@ describe("Form Validation Schemas", () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         const errors = formatZodErrors(result.error);
-        const dateError = errors.find((e) => e.field === "date");
+        const dateError = errors.find((e) => e.field === "form_date");
         const timeError = errors.find((e) => e.field === "start_time");
         expect(dateError?.message).toContain("valid date");
         expect(timeError?.message).toContain("valid time");

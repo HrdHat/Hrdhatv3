@@ -11,6 +11,12 @@
  * 
  * Recent Changes:
  * - 2024-12-19: Normalized field types in template_module_fields (checkbox -> boolean)
+ * - 2024-12-19: Applied column renames in form_instance_general_info:
+ *   • date → form_date
+ *   • task_description → work_description  
+ *   • task_location → location
+ * - 2024-12-19: Applied column rename in form_instance_signatures:
+ *   • worker_name → signer_name
  */
 
 -- HrdHat Schema v2 (schema2.sql)
@@ -129,17 +135,18 @@ CREATE TABLE IF NOT EXISTS form_instance_modules (
 );
 
 -- Last checked: 2024-03-19 - Matches live DB schema exactly
+-- Updated: 2024-12-19 - Applied column renames: date→form_date, task_description→work_description, task_location→location
 CREATE TABLE IF NOT EXISTS form_instance_general_info (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_module_id uuid,
     project_name text,
     project_address text,
-    task_location text,
+    location text,
     supervisor_name text,
     supervisor_contact text,
-    date date,
+    form_date date,
     crew_members_count integer,
-    task_description text,
+    work_description text,
     start_time time without time zone,
     end_time time without time zone,
     created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
@@ -194,11 +201,12 @@ CREATE TABLE IF NOT EXISTS form_instance_hazards (
 );
 
 -- Last checked: 2024-03-19 - Matches live DB schema exactly
+-- Updated: 2024-12-19 - Applied column rename: worker_name → signer_name
 CREATE TABLE IF NOT EXISTS form_instance_signatures (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     form_id uuid NOT NULL,
     form_module_id uuid,
-    worker_name text NOT NULL,
+    signer_name text NOT NULL,
     signature_url text NOT NULL,
     signed_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
     signature_hash text,

@@ -22,12 +22,12 @@ const fieldNameMap: Record<string, string> = {
   // General Info fields
   project_name: "Project Name",
   project_address: "Project Address",
-  task_location: "Task Location",
+  location: "Task Location",
   supervisor_name: "Supervisor Name",
   supervisor_contact: "Supervisor Contact",
-  date: "Date",
+  form_date: "Date",
   crew_members_count: "Number of Crew Members",
-  task_description: "Task Description",
+  work_description: "Task Description",
   start_time: "Start Time",
   end_time: "End Time",
 

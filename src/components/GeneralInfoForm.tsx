@@ -14,12 +14,12 @@ const GeneralInfoForm: React.FC<Props> = ({ formModuleId, initialData }) => {
   const [values, setValues] = useState<Partial<GeneralInfo>>({
     project_name: "",
     project_address: "",
-    task_location: "",
+    location: "",
     supervisor_name: "",
     supervisor_contact: "",
-    date: "",
+    form_date: "",
     crew_members_count: 0,
-    task_description: "",
+    work_description: "",
     start_time: "",
     end_time: "",
     ...initialData, // Override with any existing data
@@ -49,15 +49,23 @@ const GeneralInfoForm: React.FC<Props> = ({ formModuleId, initialData }) => {
         moduleId: formModuleId,
       };
 
-      const { error } = await supabase.functions.invoke("saveFormModuleData", {
-        body: payload,
-      });
+      console.log("Sending payload:", payload); // Debug log
+
+      const { data: responseData, error } = await supabase.functions.invoke(
+        "saveFormModuleData",
+        {
+          body: payload,
+        }
+      );
 
       if (error) {
         console.error("Save failed:", error);
+        console.error("Full error details:", JSON.stringify(error, null, 2));
+        console.error("Response data:", responseData);
         setStatus("error");
         setErrorMessage(error.message || "Save failed");
       } else {
+        console.log("Save successful:", responseData); // Debug log
         setStatus("success");
         // Clear success status after 2 seconds
         setTimeout(() => setStatus("idle"), 2000);
@@ -114,12 +122,12 @@ const GeneralInfoForm: React.FC<Props> = ({ formModuleId, initialData }) => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="task_location">Task Location</label>
+          <label htmlFor="location">Task Location</label>
           <input
-            id="task_location"
-            name="task_location"
+            id="location"
+            name="location"
             type="text"
-            value={values.task_location || ""}
+            value={values.location || ""}
             onChange={handleChange}
           />
         </div>
@@ -147,12 +155,12 @@ const GeneralInfoForm: React.FC<Props> = ({ formModuleId, initialData }) => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="date">Date</label>
+          <label htmlFor="form_date">Date</label>
           <input
-            id="date"
-            name="date"
+            id="form_date"
+            name="form_date"
             type="date"
-            value={values.date || ""}
+            value={values.form_date || ""}
             onChange={handleChange}
           />
         </div>
@@ -169,11 +177,11 @@ const GeneralInfoForm: React.FC<Props> = ({ formModuleId, initialData }) => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="task_description">Task Description</label>
+          <label htmlFor="work_description">Task Description</label>
           <textarea
-            id="task_description"
-            name="task_description"
-            value={values.task_description || ""}
+            id="work_description"
+            name="work_description"
+            value={values.work_description || ""}
             onChange={handleChange}
           />
         </div>

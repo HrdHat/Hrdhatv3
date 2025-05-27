@@ -158,17 +158,17 @@ export const generalInfoSchema = z
     form_module_id: z.string().uuid("Invalid module ID format").nullable(),
     project_name: z.string().min(1, "Required"),
     project_address: z.string().nullable(),
-    task_location: z.string().nullable(),
+    location: z.string().nullable(),
     supervisor_name: z.string().nullable(),
     supervisor_contact: z
       .string()
       .regex(phoneRegex, "Invalid phone number format")
       .nullable(),
-    date: z.string().nullable().refine(isValidDate, {
+    form_date: z.string().nullable().refine(isValidDate, {
       message: "Please enter a valid date (YYYY-MM-DD)",
     }),
     crew_members_count: z.number().int().nullable(),
-    task_description: z.string().nullable(),
+    work_description: z.string().nullable(),
     start_time: z
       .string()
       .nullable()
@@ -276,7 +276,7 @@ export const signatureSchema = z
     id: z.string().uuid("Invalid UUID format"),
     form_id: z.string().uuid("Invalid form ID format"),
     form_module_id: z.string().uuid("Invalid module ID format").nullable(),
-    worker_name: z.string().min(1, "Worker name is required"),
+    signer_name: z.string().min(1, "Worker name is required"),
     signature_url: z.string().url("Invalid signature URL format"),
     signed_at: z.string().datetime(),
     signature_hash: z.string().nullable(),

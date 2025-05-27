@@ -67,7 +67,7 @@ export const GENERAL_INFO_FIELDS: FieldDefinition[] = [
     required: false,
   },
   {
-    name: "task_location",
+    name: "location",
     label: "Task Location",
     type: "text",
     required: false,
@@ -89,7 +89,7 @@ export const GENERAL_INFO_FIELDS: FieldDefinition[] = [
     },
   },
   {
-    name: "date",
+    name: "form_date",
     label: "Date",
     type: "date",
     required: false,
@@ -109,7 +109,7 @@ export const GENERAL_INFO_FIELDS: FieldDefinition[] = [
     },
   },
   {
-    name: "task_description",
+    name: "work_description",
     label: "Task Description",
     type: "textarea",
     required: false,

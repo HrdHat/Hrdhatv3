@@ -13,12 +13,12 @@ const FIELD_NAME_MAP: Record<string, string> = {
   // General Info fields
   project_name: "Project Name",
   project_address: "Project Address",
-  task_location: "Task Location",
+  location: "Task Location",
   supervisor_name: "Supervisor Name",
   supervisor_contact: "Supervisor Contact",
-  date: "Date",
-  crew_members_count: "Number of Crew Members",
-  task_description: "Task Description",
+  form_date: "Date",
+  crew_members_count: "Crew Members Count",
+  work_description: "Task Description",
   start_time: "Start Time",
   end_time: "End Time",
 
@@ -77,7 +77,7 @@ const FIELD_NAME_MAP: Record<string, string> = {
   description: "Description",
 
   // Signature fields
-  worker_name: "Worker Name",
+  signer_name: "Worker Name",
   signature_url: "Signature",
   role: "Role",
   signature_hash: "Signature Hash",
@@ -105,7 +105,7 @@ const ARRAY_MODULE_FIELD_LABELS: Record<string, Record<string, string>> = {
     description: "Description",
   },
   signatures: {
-    worker_name: "Worker Name",
+    signer_name: "Worker Name",
     signature_url: "Signature",
     role: "Role",
   },

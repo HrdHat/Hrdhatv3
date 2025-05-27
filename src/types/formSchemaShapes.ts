@@ -20,7 +20,7 @@ export const generalInfoShape = {
     .max(200, "Project address must be less than 200 characters")
     .nullable()
     .optional(),
-  task_location: z
+  location: z
     .string()
     .min(2, "Task location must be at least 2 characters")
     .max(100, "Task location must be less than 100 characters")
@@ -37,7 +37,7 @@ export const generalInfoShape = {
     .regex(phoneRegex, "Invalid phone number format")
     .nullable()
     .optional(),
-  date: z
+  form_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)")
     .nullable()
@@ -49,7 +49,7 @@ export const generalInfoShape = {
     .max(100, "Maximum 100 crew members allowed")
     .nullable()
     .optional(),
-  task_description: z
+  work_description: z
     .string()
     .min(10, "Task description must be at least 10 characters")
     .max(1000, "Task description must be less than 1000 characters")
@@ -187,7 +187,7 @@ export const formAssetPhotoShape = {
 export const signatureShape = {
   id: z.string().uuid().optional(),
   form_module_id: z.string().uuid(),
-  worker_name: z
+  signer_name: z
     .string()
     .min(2, "Worker name must be at least 2 characters")
     .max(100, "Worker name must be less than 100 characters"),

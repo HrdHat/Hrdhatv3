@@ -28,7 +28,7 @@ const SignaturesForm: React.FC<Props> = ({
   // Add a new signature entry
   const addSignature = () => {
     const newSignature: Partial<Signature> = {
-      worker_name: "",
+      signer_name: "",
       role: "",
       signature_url: "",
     };
@@ -57,7 +57,7 @@ const SignaturesForm: React.FC<Props> = ({
   const handleSignatureCapture = async (index: number) => {
     const signature = signatures[index];
 
-    if (!signature.worker_name) {
+    if (!signature.signer_name) {
       setStatus("error");
       setErrorMessage("Please enter worker name before signing");
       return;
@@ -129,7 +129,7 @@ const SignaturesForm: React.FC<Props> = ({
   const saveSignatureDetails = async (index: number) => {
     const signature = signatures[index];
 
-    if (!signature.worker_name) {
+    if (!signature.signer_name) {
       return; // Don't save without worker name
     }
 
@@ -205,9 +205,9 @@ const SignaturesForm: React.FC<Props> = ({
                     <input
                       id={`worker-name-${index}`}
                       type="text"
-                      value={signature.worker_name || ""}
+                      value={signature.signer_name || ""}
                       onChange={(e) =>
-                        updateSignature(index, "worker_name", e.target.value)
+                        updateSignature(index, "signer_name", e.target.value)
                       }
                       onBlur={() => saveSignatureDetails(index)}
                       placeholder="Enter worker name"
@@ -244,7 +244,7 @@ const SignaturesForm: React.FC<Props> = ({
                   <div className="signature-preview">
                     <img
                       src={signature.signature_url}
-                      alt={`Signature of ${signature.worker_name}`}
+                      alt={`Signature of ${signature.signer_name}`}
                       className="signature-image"
                     />
                     <div className="signature-info">
@@ -263,12 +263,12 @@ const SignaturesForm: React.FC<Props> = ({
                       onClick={() => handleSignatureCapture(index)}
                       className="sign-button"
                       disabled={
-                        signingIndex === index || !signature.worker_name
+                        signingIndex === index || !signature.signer_name
                       }
                     >
                       {signingIndex === index ? "Signing..." : "Click to Sign"}
                     </button>
-                    {!signature.worker_name && (
+                    {!signature.signer_name && (
                       <small className="sign-note">
                         Enter worker name first
                       </small>
