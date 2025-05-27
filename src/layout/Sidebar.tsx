@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../session/AuthProvider";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import AuthForm from "../components/shared/AuthForm";
 import ActiveFlraDrawer from "../modules/forms/flra/ActiveFlraDrawer";
 import {
@@ -23,7 +23,6 @@ const Sidebar = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const navigate = useNavigate();
   const { createNewFlra, loading: createLoading } = useCreateFlraForm();
 
   useEffect(() => {
@@ -97,7 +96,7 @@ const Sidebar = () => {
               </li>
               <li>
                 <button type="button" onClick={() => setDrawerOpen(true)}>
-                  Active FLRA
+                  Active FLRA Forms
                 </button>
               </li>
               <li>

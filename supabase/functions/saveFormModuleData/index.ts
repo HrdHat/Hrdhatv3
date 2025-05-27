@@ -1,18 +1,19 @@
 // supabase/functions/saveFormModuleData/index.ts
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// 📸 SNAPSHOT: This is a copy of the live Edge Function deployed to Supabase
+// Last deployed: May 26, 2025 - CORS support added and working in production
+// Status: ✅ CORS working, ✅ Authentication working, ✅ Function processing requests
+
+import { serve } from "https://deno.land/x/sift/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
 import { z } from "https://esm.sh/zod";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
 };
-
 // ─── MODULE CONFIG ───────────────────────────────────────────────────────────
 const modulesWithModuleId = new Set([
-  "header",
   "general",
   "preJobChecklist",
   "ppeChecklist",
@@ -20,29 +21,27 @@ const modulesWithModuleId = new Set([
   "photos",
   "signatures",
 ]);
-
 const singleRowModules = new Set([
   "general",
   "preJobChecklist",
   "ppeChecklist",
 ]);
-
 function getConflictColumn(key, isArray) {
   if (key === "header") return "id";
   if (singleRowModules.has(key) && !isArray) return "form_module_id";
   return "id";
 }
-
 function buildModulePayload(data, key, moduleId) {
   if (key === "header") return data;
-  const attach = (row) => ({ ...row, form_module_id: moduleId });
+  const attach = (row) => ({
+    ...row,
+    form_module_id: moduleId,
+  });
   return Array.isArray(data) ? data.map(attach) : attach(data);
 }
-
 // ─── ZOD SCHEMAS ──────────────────────────────────────────────────────────────
 const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
 const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-
 // Header (form_instances)
 const formInstanceSchema = z
   .object({
@@ -53,7 +52,6 @@ const formInstanceSchema = z
     updated_at: z.string().datetime().optional(),
   })
   .strict();
-
 // General Info
 const generalInfoSchema = z
   .object({
@@ -71,7 +69,6 @@ const generalInfoSchema = z
     updated_at: z.string().datetime().optional(),
   })
   .strict();
-
 // Pre-Job Checklist
 const preJobChecklistSchema = z
   .object({
@@ -88,7 +85,6 @@ const preJobChecklistSchema = z
     updated_at: z.string().datetime().optional(),
   })
   .strict();
-
 // PPE Checklist
 const ppeChecklistSchema = z
   .object({
@@ -105,7 +101,6 @@ const ppeChecklistSchema = z
     updated_at: z.string().datetime().optional(),
   })
   .strict();
-
 // Task Hazards (array)
 const taskHazardControlSchema = z
   .object({
@@ -118,7 +113,6 @@ const taskHazardControlSchema = z
     updated_at: z.string().datetime().optional(),
   })
   .strict();
-
 // Photos (array)
 const formAssetPhotoSchema = z
   .object({
@@ -130,7 +124,6 @@ const formAssetPhotoSchema = z
     updated_at: z.string().datetime().optional(),
   })
   .strict();
-
 // Signatures (array)
 const signatureSchema = z
   .object({
@@ -142,7 +135,6 @@ const signatureSchema = z
     updated_at: z.string().datetime().optional(),
   })
   .strict();
-
 const schemaMap = {
   header: formInstanceSchema,
   general: generalInfoSchema,
@@ -152,7 +144,6 @@ const schemaMap = {
   photos: z.array(formAssetPhotoSchema),
   signatures: z.array(signatureSchema),
 };
-
 // ─── TABLE MAP ────────────────────────────────────────────────────────────────
 const tableMap = {
   header: "form_instances",
@@ -163,22 +154,20 @@ const tableMap = {
   photos: "form_asset_photos",
   signatures: "form_instance_signatures",
 };
-
 // ─── HANDLER ─────────────────────────────────────────────────────────────────
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", {
+      headers: corsHeaders,
+    });
   }
-
   const supabaseAdmin = createClient(
     Deno.env.get("SUPABASE_URL"),
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
   );
-
   try {
     const { moduleKey, moduleId, data } = await req.json();
-
     if (!moduleKey || !moduleId || data === undefined) {
       return new Response(
         JSON.stringify({
@@ -187,11 +176,13 @@ serve(async (req) => {
         }),
         {
           status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
         }
       );
     }
-
     if (!modulesWithModuleId.has(moduleKey)) {
       return new Response(
         JSON.stringify({
@@ -200,26 +191,33 @@ serve(async (req) => {
         }),
         {
           status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
         }
       );
     }
-
     const payload = buildModulePayload(data, moduleKey, moduleId);
     const validated = schemaMap[moduleKey].parse(payload);
     const table = tableMap[moduleKey];
     const conflict = getConflictColumn(moduleKey, Array.isArray(validated));
-
-    const { error } = await supabaseAdmin
-      .from(table)
-      .upsert(validated, { onConflict: conflict });
-
-    if (error) throw error;
-
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const { error } = await supabaseAdmin.from(table).upsert(validated, {
+      onConflict: conflict,
     });
+    if (error) throw error;
+    return new Response(
+      JSON.stringify({
+        success: true,
+      }),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      }
+    );
   } catch (e) {
     console.error("[saveFormModuleData] ERROR:", e);
     return new Response(
@@ -229,7 +227,10 @@ serve(async (req) => {
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
       }
     );
   }

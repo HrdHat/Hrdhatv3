@@ -189,7 +189,7 @@ Critical Note
 This plan is industry standard, scalable, and will prevent 90% of silent data drift/bugs.
 If you want a more step-by-step breakdown, let me know which file or flow you want implementation help with first.
 
-[]1.4 Normalize Field Definitions
+[x]1.4 Normalize Field Definitions
 
 Review all FieldDefinition objects (if used for rendering forms).
 
@@ -282,7 +282,7 @@ So the complete final list is:
 [x]src/constants/storage.ts
 [x]src/db/supabaseClient.ts
 
-2. Database Mappings
+[x]2. Database Mappings
 
 Confirm table mappings. Each ModuleKey must map to the correct table in TABLES. For example:
 
@@ -331,36 +331,6 @@ await saveFormModuleData({ formId, moduleKey: "general", data: generalFormData }
 Update form version if used. If the form uses a version counter (e.g. in form_instances.version), update the local formVersion state whenever a save succeeds. Skip this if versioning is not implemented.
 
     User feedback. Show clear save status in the UI. For example, display a spinner or "Saving..." when a save is in progress, and a success or error indicator when done. Use toasts or inline messages to inform the user of failures. Provide a retry option if a save fails.
-
-5. Error Handling & Retry
-
-Retry failed saves. Implement an exponential backoff retry for transient errors. For example, attempt up to 3 retries with delays. On final failure, mark the section as errored and prompt the user to retry.
-
-Offline support. Detect offline status (navigator.onLine). If offline, enqueue saves in memory or local storage. Listen for the online event and flush the queue automatically.
-
-Conflict detection (optional). If multiple users might edit the same form, handle version conflicts. For example, if saving a module fails due to a version mismatch, fetch the latest data and alert the user. (This requires a version column and extra queries; implement only if needed.)
-
-    UI error states. Provide visual cues for unsaved/failed sections. For example, show an "Unsaved changes" banner when dirty, and highlight a module title with an error icon if its last save failed, allowing "Retry" as a button.
-
-6. Security & Validation
-
-Row-Level Security. Configure Supabase RLS policies so users can only modify their own form data. Ensure the supabase.from(table).upsert(...) calls respect RLS (authenticated user must own the formId).
-
-Input sanitization. Validate or sanitize any rich text or JSON fields before saving, to prevent XSS or injection attacks.
-
-    Remove exposed env logs. In the Supabase client, avoid logging SUPABASE_URL or SUPABASE_KEY. The code's console.log('Supabase initialized') can remain or be removed, but do not log secret values.
-
-7. Testing
-
-Type checking. Use TypeScript and/or Zod to ensure payloads match their interfaces. Write tests that passing incorrect payloads causes compile-time errors or runtime validation failures.
-
-Unit tests. Test the save service in isolation: mock Supabase and verify that each moduleKey calls the correct table and payload structure. Ensure array vs object logic branches behave correctly.
-
-Integration tests. Simulate end-to-end flows: fill a form module, trigger save, and verify the Supabase table row is created/updated. Test bulk modules (taskHazards, photos, etc.).
-
-Error scenarios. Test network failures, 4xx/5xx responses, and offline mode to ensure retries and UI feedback work as intended.
-
-    Performance tests. Ensure debouncing works by changing a field rapidly: only one save request should be sent after pausing. Test with large datasets (e.g. many hazard rows or photos) to ensure UI remains responsive.
 
 Implementation Checklist
 
