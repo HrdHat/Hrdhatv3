@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "../db/supabaseClient";
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { supabase } from "../../../db/supabaseClient";
 
 export interface ActiveForm {
   id: string;
@@ -12,7 +12,7 @@ export interface ActiveForm {
   form_date?: string;
 }
 
-export interface UseActiveFormsResult {
+export interface ActiveFormsContextValue {
   forms: ActiveForm[];
   isLoading: boolean;
   error: string | null;
@@ -24,7 +24,9 @@ export interface UseActiveFormsResult {
   deleteForm: (formId: string) => Promise<{ success: boolean; error?: string }>;
 }
 
-export function useActiveForms(): UseActiveFormsResult {
+const ActiveFormsContext = createContext<ActiveFormsContextValue | undefined>(undefined);
+
+export const ActiveFormsProvider = ({ children }: { children: ReactNode }) => {
   const [forms, setForms] = useState<ActiveForm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,20 +35,15 @@ export function useActiveForms(): UseActiveFormsResult {
     try {
       setIsLoading(true);
       setError(null);
-
-      // Get current session
       const {
         data: { session },
         error: sessionError,
       } = await supabase.auth.getSession();
-
       if (sessionError || !session) {
         setError("Not authenticated");
         setForms([]);
         return;
       }
-
-      // Call the listActiveForms Edge Function
       const { data, error: functionError } = await supabase.functions.invoke(
         "listActiveForms",
         {
@@ -56,21 +53,16 @@ export function useActiveForms(): UseActiveFormsResult {
           },
         }
       );
-
       if (functionError) {
-        console.error("Error calling listActiveForms:", functionError);
         setError(functionError.message || "Failed to fetch forms");
         return;
       }
-
       if (!data.success) {
         setError(data.error || "Failed to fetch forms");
         return;
       }
-
       setForms(data.forms || []);
     } catch (err) {
-      console.error("Error in fetchForms:", err);
       setError(err instanceof Error ? err.message : "Unknown error occurred");
     } finally {
       setIsLoading(false);
@@ -84,17 +76,13 @@ export function useActiveForms(): UseActiveFormsResult {
   const createForm = useCallback(
     async (title: string, description?: string) => {
       try {
-        // Get current session
         const {
           data: { session },
           error: sessionError,
         } = await supabase.auth.getSession();
-
         if (sessionError || !session) {
           return { success: false, error: "Not authenticated" };
         }
-
-        // Call the formInstanceCRUD Edge Function (POST)
         const { data, error: functionError } = await supabase.functions.invoke(
           "formInstanceCRUD",
           {
@@ -104,31 +92,21 @@ export function useActiveForms(): UseActiveFormsResult {
             },
           }
         );
-
         if (functionError) {
-          console.error(
-            "Error calling formInstanceCRUD (create):",
-            functionError
-          );
           return {
             success: false,
             error: functionError.message || "Failed to create form",
           };
         }
-
         if (!data.success) {
           return {
             success: false,
             error: data.error || "Failed to create form",
           };
         }
-
-        // Refresh the forms list
         await fetchForms();
-
         return { success: true, form: data.form };
       } catch (err) {
-        console.error("Error in createForm:", err);
         return {
           success: false,
           error: err instanceof Error ? err.message : "Unknown error occurred",
@@ -141,17 +119,13 @@ export function useActiveForms(): UseActiveFormsResult {
   const deleteForm = useCallback(
     async (formId: string) => {
       try {
-        // Get current session
         const {
           data: { session },
           error: sessionError,
         } = await supabase.auth.getSession();
-
         if (sessionError || !session) {
           return { success: false, error: "Not authenticated" };
         }
-
-        // Call the formInstanceCRUD Edge Function (DELETE)
         const { data, error: functionError } = await supabase.functions.invoke(
           "formInstanceCRUD",
           {
@@ -162,31 +136,21 @@ export function useActiveForms(): UseActiveFormsResult {
             },
           }
         );
-
         if (functionError) {
-          console.error(
-            "Error calling formInstanceCRUD (delete):",
-            functionError
-          );
           return {
             success: false,
             error: functionError.message || "Failed to delete form",
           };
         }
-
         if (!data.success) {
           return {
             success: false,
             error: data.error || "Failed to delete form",
           };
         }
-
-        // Refresh the forms list
         await fetchForms();
-
         return { success: true };
       } catch (err) {
-        console.error("Error in deleteForm:", err);
         return {
           success: false,
           error: err instanceof Error ? err.message : "Unknown error occurred",
@@ -196,17 +160,21 @@ export function useActiveForms(): UseActiveFormsResult {
     [fetchForms]
   );
 
-  // Fetch forms on mount
   useEffect(() => {
     fetchForms();
   }, [fetchForms]);
 
-  return {
-    forms,
-    isLoading,
-    error,
-    refresh,
-    createForm,
-    deleteForm,
-  };
-}
+  return (
+    <ActiveFormsContext.Provider
+      value={{ forms, isLoading, error, refresh, createForm, deleteForm }}
+    >
+      {children}
+    </ActiveFormsContext.Provider>
+  );
+};
+
+export function useActiveFormsContext() {
+  const ctx = useContext(ActiveFormsContext);
+  if (!ctx) throw new Error("useActiveFormsContext must be used within ActiveFormsProvider");
+  return ctx;
+} 

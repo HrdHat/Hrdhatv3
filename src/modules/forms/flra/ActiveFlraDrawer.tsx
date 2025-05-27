@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import CloseDrawerButton from "../../../components/shared/CloseDrawerButton";
-import { useActiveForms } from "../../../hooks/useActiveForms";
+import { useActiveForms } from "./useActiveForms";
 import toast from "react-hot-toast";
 
 interface ActiveFlraDrawerProps {
@@ -13,18 +13,34 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({
   isOpen,
   onClose,
 }) => {
+  const location = useLocation();
   const navigate = useNavigate();
-  const { forms, isLoading, error, refresh, deleteForm, createForm } =
+  const { forms, isLoading, error, refresh, deleteForm } =
     useActiveForms();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
+
+  // Extract the current open formId from the route, e.g. /flra/:formId
+  const match = location.pathname.match(/\/flra\/([^/]+)/);
+  const currentOpenFormId = match ? match[1] : null;
 
   // Refresh forms list whenever drawer opens
   React.useEffect(() => {
     if (isOpen) {
       refresh();
     }
+  }, [isOpen, refresh]);
+
+  // Also refresh when the drawer is open and the window regains focus
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleFocus = () => {
+      refresh();
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
   }, [isOpen, refresh]);
 
   // Delete handler with confirmation
@@ -35,12 +51,29 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({
   const confirmDelete = async () => {
     if (!pendingDeleteId) return;
 
+    const isOpenForm = pendingDeleteId === currentOpenFormId;
+    let confirmed = true;
+
+    if (isOpenForm) {
+      confirmed = window.confirm(
+        "This form is currently open. Are you sure you want to delete it? It will be closed."
+      );
+      if (!confirmed) {
+        setPendingDeleteId(null);
+        return;
+      }
+    }
+
     setIsDeleting(true);
     try {
       const result = await deleteForm(pendingDeleteId);
 
       if (result.success) {
         toast.success("Form deleted successfully!");
+        // After deletion, if it was open, navigate away
+        if (isOpenForm) {
+          navigate("/home"); // Navigate to home page instead of root
+        }
       } else {
         toast.error(result.error || "Failed to delete form");
       }
@@ -56,41 +89,73 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({
     setPendingDeleteId(null);
   };
 
-  // Create new form handler
-  const handleCreateForm = async () => {
-    if (forms.length >= 5) {
-      toast.error(
-        "Maximum of 5 active forms allowed. Please delete a form first."
-      );
-      return;
-    }
-
-    setIsCreating(true);
-    try {
-      const result = await createForm(
-        "New FLRA",
-        "Created from Active Forms drawer"
-      );
-
-      if (result.success && result.form) {
-        toast.success("Form created successfully!");
-        navigate(`/forms/${result.form.id}`);
-        onClose();
-      } else {
-        toast.error(result.error || "Failed to create form");
-      }
-    } catch (err) {
-      toast.error("Failed to create form");
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
   // Open form handler
   const handleOpenForm = (formId: string) => {
-    navigate(`/forms/${formId}`);
+    navigate(`/flra/${formId}`);
     onClose();
   };
+
+  // Memoize the forms list rendering
+  const formsList = useMemo(() => {
+    if (isLoading || error) return null;
+    if (forms.length === 0) {
+      return (
+        <div
+          style={{ padding: "1rem", textAlign: "center", color: "#666" }}
+        >
+          No active forms. Create your first FLRA using the sidebar button!
+        </div>
+      );
+    }
+    return (
+      <ul style={{ listStyle: "none", padding: 0 }}>
+        {forms.map((form) => (
+          <li
+            key={form.id}
+            style={{ padding: "0.5rem", borderBottom: "1px solid #eee" }}
+          >
+            <div style={{ marginBottom: "0.5rem" }}>
+              <strong>{form.title}</strong>
+              <br />
+              <small>
+                {form.form_number} • {form.status} • {new Date(form.created_at).toLocaleDateString()}
+              </small>
+            </div>
+            <div>
+              <button
+                onClick={() => handleOpenForm(form.id)}
+                style={{
+                  marginRight: "0.5rem",
+                  padding: "0.25rem 0.5rem",
+                  backgroundColor: "#28a745",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "3px",
+                  cursor: "pointer",
+                }}
+              >
+                Open
+              </button>
+              <button
+                onClick={() => handleDelete(form.id)}
+                disabled={isDeleting}
+                style={{
+                  padding: "0.25rem 0.5rem",
+                  backgroundColor: "#dc3545",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "3px",
+                  cursor: "pointer",
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
+  }, [forms, isLoading, error, isDeleting]);
 
   if (!isOpen) {
     return null;
@@ -101,37 +166,6 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({
       <div>
         <h3>Active FLRAs ({forms.length}/5)</h3>
         <CloseDrawerButton onClick={onClose} />
-      </div>
-
-      {/* New Form Button */}
-      <div style={{ padding: "1rem", borderBottom: "1px solid #eee" }}>
-        <button
-          onClick={handleCreateForm}
-          disabled={forms.length >= 5 || isCreating || isLoading}
-          style={{
-            width: "100%",
-            padding: "0.75rem",
-            backgroundColor: forms.length >= 5 ? "#6c757d" : "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: forms.length >= 5 ? "not-allowed" : "pointer",
-            fontSize: "1rem",
-          }}
-        >
-          {isCreating
-            ? "Creating..."
-            : forms.length >= 5
-            ? "Max Forms Reached (5/5)"
-            : "Create New FLRA"}
-        </button>
-        {forms.length >= 5 && (
-          <small
-            style={{ color: "#dc3545", display: "block", marginTop: "0.5rem" }}
-          >
-            Delete a form to create a new one
-          </small>
-        )}
       </div>
 
       {/* Loading State */}
@@ -152,65 +186,7 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({
       )}
 
       {/* Forms List */}
-      {!isLoading && !error && (
-        <>
-          {forms.length === 0 ? (
-            <div
-              style={{ padding: "1rem", textAlign: "center", color: "#666" }}
-            >
-              No active forms. Create your first FLRA!
-            </div>
-          ) : (
-            <ul style={{ listStyle: "none", padding: 0 }}>
-              {forms.map((form) => (
-                <li
-                  key={form.id}
-                  style={{ padding: "0.5rem", borderBottom: "1px solid #eee" }}
-                >
-                  <div style={{ marginBottom: "0.5rem" }}>
-                    <strong>{form.title}</strong>
-                    <br />
-                    <small>
-                      {form.form_number} • {form.status} •{" "}
-                      {new Date(form.created_at).toLocaleDateString()}
-                    </small>
-                  </div>
-                  <div>
-                    <button
-                      onClick={() => handleOpenForm(form.id)}
-                      style={{
-                        marginRight: "0.5rem",
-                        padding: "0.25rem 0.5rem",
-                        backgroundColor: "#28a745",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "3px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Open
-                    </button>
-                    <button
-                      onClick={() => handleDelete(form.id)}
-                      disabled={isDeleting}
-                      style={{
-                        padding: "0.25rem 0.5rem",
-                        backgroundColor: "#dc3545",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "3px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
+      {formsList}
 
       {/* Delete confirmation prompt */}
       {pendingDeleteId && (
@@ -266,4 +242,4 @@ const ActiveFormInstanceDrawer: React.FC<ActiveFlraDrawerProps> = ({
   );
 };
 
-export default ActiveFormInstanceDrawer;
+export default React.memo(ActiveFormInstanceDrawer);

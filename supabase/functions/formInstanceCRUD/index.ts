@@ -349,9 +349,10 @@ serve(async (req) => {
       }
 
       // Delete all related data (cascade delete)
-      // Note: This should be done in a transaction, but for simplicity we'll do sequential deletes
+      // Note: After schema refactor, module tables use form_module_id, not form_id
+      // We need to delete form_instance_modules first, which will cascade to related data
 
-      // Delete form instance modules and their related data
+      // Delete form instance modules (this will cascade to related module data)
       const { error: moduleDeleteError } = await supabaseAdmin
         .from("form_instance_modules")
         .delete()
@@ -362,33 +363,20 @@ serve(async (req) => {
           "[formInstanceCRUD] Module delete error:",
           moduleDeleteError
         );
-        // Continue with form deletion even if modules fail
-      }
-
-      // Delete module-specific data tables (based on your database schema)
-      const moduleDataTables = [
-        "form_instance_general_info",
-        "form_instance_pre_job_checklist",
-        "form_instance_ppe_platform",
-        "form_instance_hazards",
-        "form_asset_photos",
-        "form_instance_signatures",
-        "form_instance_module_fields", // Also delete any custom fields
-      ];
-
-      for (const table of moduleDataTables) {
-        const { error } = await supabaseAdmin
-          .from(table)
-          .delete()
-          .eq("form_id", formId);
-
-        if (error) {
-          console.error(
-            `[formInstanceCRUD] Error deleting from ${table}:`,
-            error
-          );
-          // Continue with other deletions
-        }
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Failed to delete form modules",
+            details: moduleDeleteError.message,
+          }),
+          {
+            status: 500,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "application/json",
+            },
+          }
+        );
       }
 
       // Finally, delete the form instance itself

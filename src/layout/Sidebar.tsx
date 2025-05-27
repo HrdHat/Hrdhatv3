@@ -14,6 +14,7 @@ import {
 import ConfirmDialog from "../components/shared/ConfirmDialog";
 import CreateFlraButton from "../components/buttons/CreateFlraButton";
 import { useCreateFlraForm } from "../hooks/useCreateFlraForm";
+import { useActiveForms } from "../modules/forms/flra/useActiveForms";
 
 const Sidebar = () => {
   const { user, signOut } = useAuth();
@@ -24,6 +25,7 @@ const Sidebar = () => {
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const { createNewFlra, loading: createLoading } = useCreateFlraForm();
+  const { refresh } = useActiveForms();
 
   useEffect(() => {
     const initSession = async () => {
@@ -68,7 +70,10 @@ const Sidebar = () => {
   const handleConfirm = async () => {
     setShowConfirm(false);
     try {
-      await createNewFlra();
+      const result = await createNewFlra();
+      if (result.form) {
+        await refresh();
+      }
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to create new FLRA");
     }

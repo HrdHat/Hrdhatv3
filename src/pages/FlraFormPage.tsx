@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useFlraFormData } from "../hooks/useFlraFormData";
 import { ModuleRenderer } from "../components/ModuleRenderer";
 import { TaskHazardControl } from "../types/formTypes";
@@ -11,6 +11,7 @@ const FlraFormPage: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
   const { formData, loading, error } = useFlraFormData(formId || null);
   const [formValues, setFormValues] = useState<Record<string, unknown>>({});
+  const navigate = useNavigate();
 
   const handleModuleChange = (moduleId: string, value: unknown) => {
     setFormValues((prev) => ({
@@ -18,6 +19,13 @@ const FlraFormPage: React.FC = () => {
       [moduleId]: value,
     }));
   };
+
+  useEffect(() => {
+    if (!loading && (!formData || error)) {
+      // If the form is missing (deleted), redirect to dashboard or forms list
+      navigate("/", { replace: true });
+    }
+  }, [loading, formData, error, navigate]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
