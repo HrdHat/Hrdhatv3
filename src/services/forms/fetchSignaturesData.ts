@@ -1,7 +1,7 @@
 import { supabase } from "../../db/supabaseClient";
 import { TABLES, FORM_INSTANCE_SIGNATURES } from "../../constants/database";
-import { Signature } from "../../types/formSchemas";
-import { signatureSchema } from "../../types/formSchemas";
+import { Signature } from "../../types/formValidationSchemas";
+import { signatureSchema } from "../../types/formValidationSchemas";
 
 export interface FetchSignaturesResult {
   data: Signature[] | null;

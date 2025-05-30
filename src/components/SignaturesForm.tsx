@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Signature } from "../types/formSchemas";
+import { Signature } from "../types";
 import { supabase } from "../db/supabaseClient";
 
 // Props: formId + data loaded by your useFlraFormData hook

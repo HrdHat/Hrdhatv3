@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { GeneralInfo } from "../types/formSchemas";
+import { GeneralInfo } from "../types";
 import { supabase } from "../db/supabaseClient";
 import useDebouncedValue from "../hooks/useDebouncedValue";
 

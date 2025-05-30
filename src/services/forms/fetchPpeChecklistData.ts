@@ -1,7 +1,7 @@
 import { supabase } from "../../db/supabaseClient";
 import { TABLES, FORM_INSTANCE_PPE_PLATFORM } from "../../constants/database";
-import { PpeChecklist } from "../../types/formSchemas";
-import { ppeChecklistSchema } from "../../types/formSchemas";
+import { PpeChecklist } from "../../types/formValidationSchemas";
+import { ppeChecklistSchema } from "../../types/formValidationSchemas";
 
 export interface FetchPpeChecklistResult {
   data: PpeChecklist | null;

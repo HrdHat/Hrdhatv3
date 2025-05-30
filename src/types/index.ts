@@ -47,7 +47,7 @@ export {
   formAssetPhotoSchema,
   signatureSchema,
   moduleDataSchema,
-} from "./formSchemas";
+} from "./formValidationSchemas";
 
 export type {
   GeneralInfo,
@@ -58,7 +58,7 @@ export type {
   FormAssetPhoto as FormAssetPhotoSchema,
   Signature as SignatureSchema,
   ModuleData as ModuleDataSchema,
-} from "./formSchemas";
+} from "./formValidationSchemas";
 
 // Module Types
 export type {
@@ -90,9 +90,6 @@ export type {
   ModuleWithRenderer,
   MissingRendererProps,
 } from "./renderer.types";
-
-// Validation Error Types
-export type { ValidationError } from "../utils/validation";
 
 // Re-export commonly used together
 export * as FormConstants from "./formTypes";

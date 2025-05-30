@@ -381,6 +381,15 @@ export type SaveFormModuleDataParams = z.infer<
   typeof saveFormModuleDataParamsSchema
 >;
 
+// Export individual schema types
+export type GeneralInfo = z.infer<typeof generalInfoSchema>;
+export type PreJobChecklist = z.infer<typeof preJobChecklistSchema>;
+export type PpeChecklist = z.infer<typeof ppeChecklistSchema>;
+export type FormInstance = z.infer<typeof formInstanceSchema>;
+export type TaskHazardControl = z.infer<typeof taskHazardControlSchema>;
+export type FormAssetPhoto = z.infer<typeof formAssetPhotoSchema>;
+export type Signature = z.infer<typeof signatureSchema>;
+
 // Form Creation Schema
 export const createFormSchema = z
   .object({

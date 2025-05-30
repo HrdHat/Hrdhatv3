@@ -1,7 +1,7 @@
-import { supabase } from "../../db/supabaseClient";
+import { supabase } from '../../db/supabaseClient';
 import { TABLES, FORM_INSTANCE_GENERAL_INFO } from "../../constants/database";
-import { GeneralInfo } from "../../types/formSchemas";
-import { generalInfoSchema } from "../../types/formSchemas";
+import { GeneralInfo } from "../../types/formValidationSchemas";
+import { generalInfoSchema } from "../../types/formValidationSchemas";
 
 export interface FetchGeneralInfoResult {
   data: GeneralInfo | null;

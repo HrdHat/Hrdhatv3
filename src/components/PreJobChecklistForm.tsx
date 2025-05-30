@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { PreJobChecklist } from "../types/formSchemas";
+import { PreJobChecklist } from "../types";
 import { supabase } from "../db/supabaseClient";
 import useDebouncedValue from "../hooks/useDebouncedValue";
 

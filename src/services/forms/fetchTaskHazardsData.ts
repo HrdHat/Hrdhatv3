@@ -1,7 +1,7 @@
 import { supabase } from "../../db/supabaseClient";
 import { TABLES, FORM_INSTANCE_HAZARDS } from "../../constants/database";
-import { TaskHazardControl } from "../../types/formSchemas";
-import { taskHazardControlSchema } from "../../types/formSchemas";
+import { TaskHazardControl } from "../../types/formValidationSchemas";
+import { taskHazardControlSchema } from "../../types/formValidationSchemas";
 
 export interface FetchTaskHazardsResult {
   data: TaskHazardControl[] | null;

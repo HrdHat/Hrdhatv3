@@ -3,11 +3,11 @@ import {
   generalInfoSchema,
   preJobChecklistSchema,
   ppeChecklistSchema,
-  formInstanceSchema,
   taskHazardControlSchema,
   formAssetPhotoSchema,
   signatureSchema,
-} from "../types/formSchemas";
+  formInstanceSchema,
+} from "../types/formValidationSchemas";
 import { MODULE_KEYS, type ModuleKey } from "../types/formTypes";
 import type { ZodObject, ZodTypeAny } from "zod";
 

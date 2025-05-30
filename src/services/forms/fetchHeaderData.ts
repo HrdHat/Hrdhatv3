@@ -1,7 +1,7 @@
 import { supabase } from "../../db/supabaseClient";
 import { TABLES, FORM_INSTANCE_FIELDS } from "../../constants/database";
-import { FormInstance } from "../../types/formSchemas";
-import { formInstanceSchema } from "../../types/formSchemas";
+import { FormInstance } from "../../types/formValidationSchemas";
+import { formInstanceSchema } from "../../types/formValidationSchemas";
 
 export interface FetchHeaderResult {
   data: FormInstance | null;

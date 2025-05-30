@@ -3,8 +3,8 @@ import {
   TABLES,
   FORM_INSTANCE_PRE_JOB_CHECKLIST,
 } from "../../constants/database";
-import { PreJobChecklist } from "../../types/formSchemas";
-import { preJobChecklistSchema } from "../../types/formSchemas";
+import { PreJobChecklist } from "../../types/formValidationSchemas";
+import { preJobChecklistSchema } from "../../types/formValidationSchemas";
 
 export interface FetchPreJobChecklistResult {
   data: PreJobChecklist | null;

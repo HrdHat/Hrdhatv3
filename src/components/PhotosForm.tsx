@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { FormAssetPhoto } from "../types/formSchemas";
+import { FormAssetPhoto } from "../types";
 import { supabase } from "../db/supabaseClient";
 
 // Props: formId + data loaded by your useFlraFormData hook

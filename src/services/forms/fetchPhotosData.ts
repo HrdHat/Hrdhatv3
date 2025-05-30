@@ -1,7 +1,7 @@
 import { supabase } from "../../db/supabaseClient";
 import { TABLES } from "../../constants/database";
-import { FormAssetPhoto } from "../../types/formSchemas";
-import { formAssetPhotoSchema } from "../../types/formSchemas";
+import { FormAssetPhoto } from "../../types/formValidationSchemas";
+import { formAssetPhotoSchema } from "../../types/formValidationSchemas";
 
 export interface FetchPhotosResult {
   data: FormAssetPhoto[] | null;
