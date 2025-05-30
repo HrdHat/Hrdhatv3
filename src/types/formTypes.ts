@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 // Shared FLRA form types for use in centralized state management
 
 // Form status constants
@@ -269,3 +267,104 @@ export type FlraForm = {
   createdAt: string;
   submittedAt?: string | null;
 };
+
+// === NEW JSONB SYSTEM TYPES (Phase 1) ===
+
+// Form data entry for the new JSONB system
+export type FormDataEntry = {
+  id: string;
+  form_id: string;
+  module_id: string;  // UUID reference to template_modules.id
+  data: Record<string, unknown>;  // JSONB field containing the actual form data
+  tenant_id?: string | null;
+  version: number;
+  last_saved_by?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+// Result type for form instance creation
+export interface CreateFormInstanceResult {
+  success: boolean;
+  formId?: string;
+  entryIds?: Record<string, string>; // { [moduleId]: entryId }
+  error?: string;
+}
+
+// Input type for creating a new form instance
+export interface CreateFormInstanceInput {
+  userId: string;
+  title?: string;
+  description?: string;
+  companyId?: string;
+  projectId?: string;
+  formDate?: string;
+  templateModuleIds: string[]; // Array of template_modules.id to create entries for
+}
+
+// Input type for saving module data in the new system
+export interface SaveModuleDataInput {
+  formId: string;
+  moduleId: string;  // template_modules.id
+  data: Record<string, unknown>;  // The actual form data as JSONB
+  userId?: string;
+  version?: number;
+}
+
+// Result type for saving module data
+export interface SaveModuleDataResult {
+  success: boolean;
+  entryId?: string;
+  error?: string;
+  validationErrors?: Array<{field: string; message: string}>;
+}
+
+// === PHASE 2: TEMPLATE SYSTEM TYPES ===
+
+// Field type definitions
+export type FieldType = 
+  | 'text' | 'boolean' | 'number' | 'date' | 'time' 
+  | 'textarea' | 'select' | 'multiselect' | 'file' | 'signature';
+
+// Field definition from database
+export interface FieldDefinition {
+  id: string;           // template_module_fields.id
+  moduleId: string;     // template_module_fields.module_id
+  name: string;         // template_module_fields.name
+  label: string;        // template_module_fields.label
+  type: FieldType;      // template_module_fields.type
+  required: boolean;    // template_module_fields.required
+  fieldOrder: number;   // template_module_fields.field_order
+  defaultValue?: string; // template_module_fields.default_value
+}
+
+// Module definition from database
+export interface ModuleDef {
+  id: string;                           // template_modules.id (UUID)
+  name: string;                         // template_modules.name  
+  label: string;                        // template_modules.label
+  rendererKey: string;                  // template_modules.renderer_key
+  usesFields: boolean;                  // template_modules.uses_fields
+  layoutStyle?: string;                 // template_modules.layout_style
+  fieldDefinitions?: FieldDefinition[]; // From template_module_fields
+  moduleOrder: number;                  // For ordering
+  isRequired: boolean;                  // Default requirement
+}
+
+// Result type for template loading operations
+export interface TemplateLoadResult {
+  success: boolean;
+  modules?: ModuleDef[];
+  error?: string;
+}
+
+// Validation result for field validation
+export interface FieldValidationResult {
+  isValid: boolean;
+  error?: string;
+}
+
+// Enhanced save module data input with field definitions
+export interface EnhancedSaveModuleDataInput extends SaveModuleDataInput {
+  fieldDefinitions?: FieldDefinition[]; // Field schemas for validation
+}

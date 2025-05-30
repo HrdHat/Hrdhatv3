@@ -9,14 +9,6 @@
  * and provide field-level error management for the UI.
  */
 
-import { z } from "zod";
-
-export interface ValidationError {
-  field: string;
-  message: string;
-  userField?: string; // Human-readable field name
-}
-
 // Map technical field names to user-friendly names
 const fieldNameMap: Record<string, string> = {
   // General Info fields
@@ -151,113 +143,21 @@ function getUserFieldName(
   return fieldNameMap[field] || field;
 }
 
-/**
- * Formats Zod validation errors into user-friendly messages
- * @param error The ZodError to format
- * @param moduleKey The module key (optional)
- * @returns Array of field-specific error messages
- */
-export function formatZodErrors(
-  error: z.ZodError,
-  moduleKey?: string
-): ValidationError[] {
-  return error.issues.map((issue) => {
-    const field = issue.path.join(".");
-    let message = issue.message;
-    return {
-      field,
-      message,
-      userField: getUserFieldName(field, message, moduleKey),
-    };
-  });
-}
-
-/**
- * Enhanced error formatting with module context for better UX
- * @param error The ZodError to format
- * @param moduleKey The module key for context-aware error messages
- * @returns Array of field-specific error messages with enhanced context
- */
-export function formatZodErrorsWithContext(
-  error: z.ZodError,
-  moduleKey?: string
-): ValidationError[] {
-  return error.issues.map((issue) => {
-    const field = issue.path.join(".");
-    let message = issue.message;
-
-    // Enhance message based on context
-    if (moduleKey) {
-      // Add module context to error messages
-      const moduleDisplayName = getModuleDisplayName(moduleKey);
-      if (issue.path.length === 0) {
-        message = `${moduleDisplayName}: ${message}`;
-      }
-    }
-
-    return {
-      field,
-      message,
-      userField: getUserFieldName(field, message, moduleKey),
-    };
-  });
-}
-
-/**
- * Formats a single validation error message for display
- * @param error The ZodError to format
- * @returns A user-friendly error message
- */
-export function formatZodErrorSummary(error: z.ZodError): string {
-  const errors = formatZodErrors(error);
-  if (errors.length === 1) {
-    return `${errors[0].userField}: ${errors[0].message}`;
+// Add new lightweight validation helper
+export function validateField(type: string, value: any, required = false): boolean {
+  if (required && (value === undefined || value === null || value === '')) return false;
+  switch (type) {
+    case 'string':
+      return typeof value === 'string';
+    case 'number':
+      return typeof value === 'number' && !isNaN(value);
+    case 'boolean':
+      return typeof value === 'boolean';
+    case 'array':
+      return Array.isArray(value);
+    case 'object':
+      return typeof value === 'object' && value !== null && !Array.isArray(value);
+    default:
+      return true;
   }
-  return `${errors.length} validation errors found. Please check the form.`;
-}
-
-/**
- * Creates a validation error map for easy field lookup
- * @param errors Array of validation errors
- * @returns Map of field names to error messages
- */
-export function createValidationErrorMap(
-  errors: ValidationError[]
-): Record<string, string[]> {
-  const errorMap: Record<string, string[]> = {};
-
-  errors.forEach((error) => {
-    if (!errorMap[error.field]) {
-      errorMap[error.field] = [];
-    }
-    errorMap[error.field].push(error.message);
-  });
-
-  return errorMap;
-}
-
-/**
- * Checks if a field has validation errors
- * @param fieldName The field name to check
- * @param errorMap The validation error map
- * @returns True if field has errors
- */
-export function hasFieldError(
-  fieldName: string,
-  errorMap: Record<string, string[]>
-): boolean {
-  return !!(errorMap[fieldName] && errorMap[fieldName].length > 0);
-}
-
-/**
- * Gets error messages for a specific field
- * @param fieldName The field name
- * @param errorMap The validation error map
- * @returns Array of error messages for the field
- */
-export function getFieldErrors(
-  fieldName: string,
-  errorMap: Record<string, string[]>
-): string[] {
-  return errorMap[fieldName] || [];
 }
