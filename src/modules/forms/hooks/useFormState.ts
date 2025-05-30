@@ -376,6 +376,21 @@ export function useFlraFormState(
     }
   }, [formId, modules, formData.actions]);
 
+  // Load individual module data (enhanced version for Phase 5)
+  const loadModuleData = useCallback(async (moduleId: string): Promise<Record<string, unknown> | null> => {
+    try {
+      const moduleData = await getFormModuleData(formId, moduleId);
+      if (moduleData && Object.keys(moduleData).length > 0) {
+        formData.actions.updateModuleData(moduleId, moduleData, { skipDirty: true });
+        return moduleData;
+      }
+      return null;
+    } catch (error) {
+      console.error(`Failed to load data for module ${moduleId}:`, error);
+      return null;
+    }
+  }, [formId, formData.actions]);
+
   // Reset module to template defaults
   const resetModule = useCallback(async (moduleId: string) => {
     const fieldDefinitions = await getFieldDefinitions(moduleId);
@@ -501,15 +516,21 @@ export function useFlraFormState(
       validateModule,
       saveModule,
       loadFormData,
+      loadModuleData,
       resetModule,
       // Re-export core actions
       updateModuleData: formData.actions.updateModuleData,
       markClean: formData.actions.markClean,
+      markModuleClean: formData.actions.markClean,
       markSaving: formData.actions.markSaving,
       setErrors: formData.actions.setErrors,
       clearErrors: formData.actions.clearErrors,
       handleConflict: formData.actions.handleConflict,
       resolveConflict: formData.actions.resolveConflict,
+      // Phase 5 compatibility methods
+      updateModuleVersion: formData.actions.updateModuleVersion,
+      setModuleConflict: formData.actions.setModuleConflict,
+      clearModuleConflict: formData.actions.clearModuleConflict,
     },
     
     // Enhanced selectors

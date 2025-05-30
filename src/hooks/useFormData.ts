@@ -241,6 +241,18 @@ export function useFormData(
     }));
   }, []);
 
+  // Add new method for updating module version (alias for setVersion for compatibility)
+  const updateModuleVersion = useCallback((moduleId: string, version: number) => {
+    setVersion(moduleId, version);
+  }, [setVersion]);
+
+  // Add method for loading individual module data
+  const loadModuleData = useCallback(async (moduleId: string): Promise<Record<string, unknown> | null> => {
+    // This is a placeholder that should be overridden in useFlraFormState
+    // For now, return the current data
+    return state.data[moduleId] || null;
+  }, [state.data]);
+
   const handleConflict = useCallback((moduleId: string, conflict: ConflictInfo) => {
     setState(prevState => ({
       ...prevState,
@@ -249,6 +261,34 @@ export function useFormData(
         [moduleId]: conflict
       }
     }));
+  }, []);
+
+  // Add method for setting module conflict (moved after handleConflict)
+  const setModuleConflict = useCallback((moduleId: string, conflictInfo: any) => {
+    const conflict: ConflictInfo = {
+      moduleId,
+      conflictType: conflictInfo.type || 'version_mismatch',
+      serverVersion: conflictInfo.serverVersion || 0,
+      clientVersion: conflictInfo.clientVersion || 0,
+      serverData: conflictInfo.serverData || {},
+      clientData: state.data[moduleId] || {},
+      conflictedFields: conflictInfo.conflictedFields || [],
+      detectedAt: new Date(),
+    };
+    
+    handleConflict(moduleId, conflict);
+  }, [state.data, handleConflict]);
+
+  // Add method for clearing module conflict
+  const clearModuleConflict = useCallback((moduleId: string) => {
+    setState(prevState => {
+      const newConflicts = { ...prevState.conflicts };
+      delete newConflicts[moduleId];
+      return {
+        ...prevState,
+        conflicts: newConflicts
+      };
+    });
   }, []);
 
   const resolveConflict = useCallback((
@@ -455,6 +495,10 @@ export function useFormData(
       setErrors,
       clearErrors,
       setVersion,
+      updateModuleVersion,
+      loadModuleData,
+      setModuleConflict,
+      clearModuleConflict,
       handleConflict,
       resolveConflict,
       confirmOptimisticUpdate,
